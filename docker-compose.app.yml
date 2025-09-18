@@ -1,0 +1,39 @@
+# 单独部署 crypto-trader (连接外部 Freqtrade)
+# 使用方法: docker-compose -f docker-compose.app.yml up -d
+# 注意: 需要在 .env 文件中配置 FREQTRADE_API_URL 指向外部 Freqtrade 实例
+
+services:
+  app:
+    build: .
+    container_name: crypto-trader
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "14250:8000"  # 映射容器内8000端口到宿主机14250
+    volumes:
+      - ./data:/app/data  # 持久化数据目录
+      - ./user_data:/app/user_data:ro  # 读取 Freqtrade 配置以获取 API 凭据（只读）
+    environment:
+      - DATABASE_PATH=/app/data/crypto_data.db
+      # Freqtrade API URL - 必须配置外部 Freqtrade 地址
+      - FREQTRADE_API_URL=${FREQTRADE_API_URL:-http://host.docker.internal:6677}
+      # API 认证信息（可选，如果外部 Freqtrade 启用了认证）
+      - FREQTRADE_API_USERNAME=${FREQTRADE_API_USERNAME:-}
+      - FREQTRADE_API_PASSWORD=${FREQTRADE_API_PASSWORD:-}
+      # Proxy settings (configured via .env file)
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
+      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,crypto-trader}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crypto-trader.rule=Host(`btc.subx.fun`)"
+      - "traefik.http.routers.crypto-trader.entrypoints=websecure"
+      - "traefik.http.routers.crypto-trader.tls.certresolver=letsencrypt"
+      - "traefik.http.services.crypto-trader.loadbalancer.server.port=8000"
+    networks:
+      - traefik
+
+networks:
+  traefik:
+    external: true

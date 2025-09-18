@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "my-backend"
+version = "0.1.0"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "pandas",
+    "numpy",
+    "sqlmodel",
+    "requests",
+    "pybit",
+    "python-dotenv",
+    "openai",
+    "apscheduler",
+]
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "black",
+    "ruff",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["main.py"]
+

@@ -1,0 +1,21 @@
+=== Factor Evaluation Summary ===
+Total symbols processed: 3
+Total columns: 10
+Columns: ['symbol', '动量因子', '支撑因子', '最长K线天数', 'name', '当前价格', '涨跌幅', '动量评分', '支撑评分', '综合评分']
+
+Completely empty rows: 0
+Factor columns: ['动量因子', '支撑因子']
+Rows without any factor values: 0
+  动量因子: 0 nulls, 0 zeros, 0 infinites, 3 valid values
+  支撑因子: 1 nulls, 0 zeros, 0 infinites, 2 valid values
+
+Score columns: ['动量评分', '支撑评分', '综合评分']
+  动量评分: 0 nulls
+  支撑评分: 1 nulls
+  综合评分: 0 nulls
+
+=== Sample rows with missing data ===
+Found 1 rows with missing factor data
+First 5 problematic rows:
+     symbol      动量因子  支撑因子  最长K线天数       name    当前价格       涨跌幅  动量评分  支撑评分  综合评分
+2  SOMIUSDT  6.762931   NaN     NaN  SOMI/USDT  0.9705  0.206505   1.0   NaN   1.0
