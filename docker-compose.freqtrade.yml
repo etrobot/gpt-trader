@@ -23,7 +23,7 @@ services:
       - "6677:8080"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.freqtrade.rule=Host(`freq.subx.fun`)"
+      - "traefik.http.routers.freqtrade.rule=Host(`ft01.subx.fun`)"
       - "traefik.http.routers.freqtrade.entrypoints=websecure"
       - "traefik.http.routers.freqtrade.tls.certresolver=letsencrypt"
       - "traefik.http.services.freqtrade.loadbalancer.server.port=8080"

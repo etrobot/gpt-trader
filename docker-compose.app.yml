@@ -27,7 +27,7 @@ services:
       - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,crypto-trader}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.crypto-trader.rule=Host(`btc.subx.fun`)"
+      - "traefik.http.routers.crypto-trader.rule=Host(`ui01.subx.fun`)"
       - "traefik.http.routers.crypto-trader.entrypoints=websecure"
       - "traefik.http.routers.crypto-trader.tls.certresolver=letsencrypt"
       - "traefik.http.services.crypto-trader.loadbalancer.server.port=8000"

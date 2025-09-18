@@ -59,8 +59,8 @@
     ],
     "CORS_origins": [
       "http://localhost:14250",
-      "https://btc.subx.fun",
-      "https://freq.subx.fun"
+      "https://ui01.subx.fun",
+      "https://ft01.subx.fun"
     ]
   },
   "strategy_path": "/freqtrade/user_data/strategies"

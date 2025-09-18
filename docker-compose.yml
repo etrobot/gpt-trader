@@ -6,7 +6,7 @@ services:
     env_file:
       - .env
     ports:
-      - "14250:8000"  # 映射容器内8000端口到宿主机14250
+      - "14250:8000"  # App API port
     volumes:
       - ./data:/app/data  # 持久化数据目录
       - ./user_data:/app/user_data:ro  # 读取 Freqtrade 配置以获取 API 凭据（只读）
@@ -19,10 +19,10 @@ services:
       - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,freqtrade-bot,crypto-trader}
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.crypto-trader.rule=Host(`btc.subx.fun`)"
-      - "traefik.http.routers.crypto-trader.entrypoints=websecure"
-      - "traefik.http.routers.crypto-trader.tls.certresolver=letsencrypt"
-      - "traefik.http.services.crypto-trader.loadbalancer.server.port=8000"
+      - "traefik.http.routers.crypto-trader-api.rule=Host(`api01.subx.fun`)"
+      - "traefik.http.routers.crypto-trader-api.entrypoints=websecure"
+      - "traefik.http.routers.crypto-trader-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.crypto-trader-api.loadbalancer.server.port=8000"
     networks:
       - traefik
       - default
@@ -48,7 +48,7 @@ services:
       - "6677:8080"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.freqtrade.rule=Host(`freq.subx.fun`)"
+      - "traefik.http.routers.freqtrade.rule=Host(`ft01.subx.fun`)"
       - "traefik.http.routers.freqtrade.entrypoints=websecure"
       - "traefik.http.routers.freqtrade.tls.certresolver=letsencrypt"
       - "traefik.http.services.freqtrade.loadbalancer.server.port=8080"

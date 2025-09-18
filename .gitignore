@@ -159,7 +159,7 @@ downloads/
 eggs/
 .eggs/
 # python-lib/
-# backend/lib/
+# App/lib/
 # venv/lib/
 lib64/
 parts/
@@ -308,8 +308,8 @@ cython_debug/
 # *.html
 # *.csv
 
-/backend/static/
-backend/debug_output/
+/App/static/
+App/debug_output/
 data/
 user_data/config_external_signals.json.backup.*
 user_data/config_external_signals.json

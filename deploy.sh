@@ -164,7 +164,7 @@ if [ -f "user_data/config_external_signals.json" ] && [ -n "$FREQTRADE_USERNAME"
             .api_server.password = $password | 
             .api_server.jwt_secret_key = $jwt_secret | 
             .api_server.ws_token = [$ws_token] |
-            .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14250", "https://btc.subx.fun", "https://ftui.subx.fun"]' \
+            .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14250", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
            user_data/config_external_signals.json > user_data/config_temp.json && \
         mv user_data/config_temp.json user_data/config_external_signals.json
         success "✅ Updated Freqtrade config with credentials"
@@ -211,7 +211,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
                 .api_server.password = $password | 
                 .api_server.jwt_secret_key = $jwt_secret | 
                 .api_server.ws_token = [$ws_token] |
-                .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14250", "https://btc.subx.fun", "https://ftui.subx.fun"]' \
+                .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14250", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
                user_data/config_external_signals.json > user_data/config_temp.json && \
             mv user_data/config_temp.json user_data/config_external_signals.json
             success "✅ Updated Freqtrade config with manually entered credentials"
@@ -227,7 +227,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
         echo "Common options:"
         echo "  - http://host.docker.internal:6677  (if Freqtrade runs on host)"
         echo "  - http://192.168.1.100:6677         (remote server)"
-        echo "  - https://freq.subx.fun             (domain name)"
+        echo "  - https://ft01.subx.fun             (domain name)"
         read -p "Enter Freqtrade API URL: " FREQTRADE_API_URL_INPUT
         if [ -n "$FREQTRADE_API_URL_INPUT" ]; then
             FREQTRADE_API_URL="$FREQTRADE_API_URL_INPUT"
@@ -382,25 +382,25 @@ backup_database
 if [ "$SKIP_DOCKER" = "1" ] || ! command_exists docker || ! command_exists docker-compose; then
   warn "⚠️  未检测到 Docker 或 docker-compose，进入本地测试模式（不启动容器）..."
 
-  # Validate that backend can serve SPA without a prebuilt static folder
-  if grep -q "@app.get(\"/{full_path:path}\")" backend/main.py; then
+  # Validate that App can serve SPA without a prebuilt static folder
+  if grep -q "@app.get(\"/{full_path:path}\")" App/main.py; then
     success "✅ 检测到通配路由，支持SPA前端"
   else
-    warn "⚠️  未检测到通配路由，请检查 backend/main.py"
+    warn "⚠️  未检测到通配路由，请检查 App/main.py"
   fi
 
   # Frontend build is optional in local mode
-  if [ -f "backend/static/index.html" ]; then
-    success "✅ 检测到 backend/static/index.html"
+  if [ -f "App/static/index.html" ]; then
+    success "✅ 检测到 App/static/index.html"
   else
     warn "ℹ️  本地未发现构建后的前端，将返回API信息或需要自行构建前端"
   fi
 
   # Check static mounts
-  [ -d "backend/static/assets" ] && success "✅ 检测到静态资源目录 backend/static/assets" || warn "⚠️  未检测到 backend/static/assets"
-  [ -d "backend/static/icons" ] && success "✅ 检测到图标目录 backend/static/icons" || warn "⚠️  未检测到 backend/static/icons"
-  [ -f "backend/static/manifest.json" ] && success "✅ 检测到 PWA 文件 manifest.json" || warn "⚠️  未检测到 manifest.json"
-  [ -f "backend/static/sw.js" ] && success "✅ 检测到 PWA 文件 sw.js" || warn "⚠️  未检测到 sw.js"
+  [ -d "App/static/assets" ] && success "✅ 检测到静态资源目录 App/static/assets" || warn "⚠️  未检测到 App/static/assets"
+  [ -d "App/static/icons" ] && success "✅ 检测到图标目录 App/static/icons" || warn "⚠️  未检测到 App/static/icons"
+  [ -f "App/static/manifest.json" ] && success "✅ 检测到 PWA 文件 manifest.json" || warn "⚠️  未检测到 manifest.json"
+  [ -f "App/static/sw.js" ] && success "✅ 检测到 PWA 文件 sw.js" || warn "⚠️  未检测到 sw.js"
 
   success "🎉 本地路由检查通过：根路径将返回前端 index.html"
   echo ""
@@ -435,24 +435,25 @@ restore_database
 
 # Optional: quick health check via curl if available
 if command_exists curl; then
-  info "🔍 Verifying root path returns index.html..."
-  if curl -sSf "http://localhost:14250/" | grep -qi "<div id=\"root\">"; then
-    success "✅ Root path served frontend index.html"
+  info "🔍 Verifying API is responding..."
+  if curl -sSf "http://localhost:14250/" | grep -qi "Crypto Trading Strategy API"; then
+    success "✅ App API is responding correctly"
   else
-    warn "⚠️  Root path content did not match expected HTML"
+    warn "⚠️  API response did not match expected content"
   fi
 fi
 
 success "🎉 Deployment completed!"
 echo ""
 info "📊 Application URLs:"
-echo "  - Main Dashboard: http://localhost:14250"
+echo "  - App API: http://localhost:14250"
 echo "  - API Documentation: http://localhost:14250/docs"
+echo "  - API Alternative Docs: http://localhost:14250/redoc"
 echo "  - Freqtrade API: http://localhost:6677"
 echo ""
 info "🌐 Production URLs:"
-echo "  - Main Dashboard: https://btc.subx.fun"
-echo "  - FreqUI: https://freq.subx.fun"
+echo "  - App API: https://api01.subx.fun"
+echo "  - FreqTrade API: https://ft01.subx.fun"
 echo ""
 info "🔐 Security Information:"
 echo "  - Freqtrade Username: ${FREQTRADE_USERNAME}"
