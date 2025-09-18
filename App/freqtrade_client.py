@@ -7,7 +7,7 @@ import requests
 logger = logging.getLogger(__name__)
 
 # Environment-based configuration
-API_BASE_URL = os.getenv("FREQTRADE_API_URL", "http://freqtrade-bot:8080")  # default to docker service
+API_BASE_URL = os.getenv("FREQTRADE_API_URL", "http://freqtrade-bot01:8080")  # default to docker service
 API_USERNAME = os.getenv("FREQTRADE_API_USERNAME")
 API_PASSWORD = os.getenv("FREQTRADE_API_PASSWORD")
 API_TOKEN = os.getenv("FREQTRADE_API_TOKEN")  # If provided and valid (JWT), preferred over username/password

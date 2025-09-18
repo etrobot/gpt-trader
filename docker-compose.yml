@@ -12,11 +12,11 @@ services:
       - ./user_data:/app/user_data:ro  # 读取 Freqtrade 配置以获取 API 凭据（只读）
     environment:
       - DATABASE_PATH=/app/data/crypto_data.db
-      - FREQTRADE_API_URL=http://freqtrade-bot:8080
+      - FREQTRADE_API_URL=http://freqtrade-bot01:8080
       # Proxy settings (configured via .env file)
       - HTTP_PROXY=${HTTP_PROXY:-}
       - HTTPS_PROXY=${HTTPS_PROXY:-}
-      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,freqtrade-bot,crypto-trader}
+      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,freqtrade-bot01,crypto-trader}
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.crypto-trader-api.rule=Host(`api01.subx.fun`)"
@@ -29,7 +29,7 @@ services:
 
   freqtrade:
     image: freqtradeorg/freqtrade:stable
-    container_name: freqtrade-bot
+    container_name: freqtrade-bot01
     restart: unless-stopped
     volumes:
       - ./user_data:/freqtrade/user_data
@@ -43,7 +43,7 @@ services:
       # Proxy settings (configured via .env file)
       - HTTP_PROXY=${HTTP_PROXY:-}
       - HTTPS_PROXY=${HTTPS_PROXY:-}
-      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,freqtrade-bot,crypto-trader}
+      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,freqtrade-bot01,crypto-trader}
     ports:
       - "6677:8080"
     labels:

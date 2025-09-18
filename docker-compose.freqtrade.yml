@@ -4,7 +4,7 @@
 services:
   freqtrade:
     image: freqtradeorg/freqtrade:stable
-    container_name: freqtrade-bot
+    container_name: freqtrade-bot01
     restart: unless-stopped
     volumes:
       - ./user_data:/freqtrade/user_data
@@ -20,7 +20,7 @@ services:
       - HTTPS_PROXY=${HTTPS_PROXY:-}
       - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1}
     ports:
-      - "6677:8080"
+      - "6678:8080"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.freqtrade.rule=Host(`ft01.subx.fun`)"
