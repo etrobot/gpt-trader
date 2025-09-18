@@ -164,7 +164,7 @@ if [ -f "user_data/config_external_signals.json" ] && [ -n "$FREQTRADE_USERNAME"
             .api_server.password = $password | 
             .api_server.jwt_secret_key = $jwt_secret | 
             .api_server.ws_token = [$ws_token] |
-            .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14250", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
+            .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
            user_data/config_external_signals.json > user_data/config_temp.json && \
         mv user_data/config_temp.json user_data/config_external_signals.json
         success "✅ Updated Freqtrade config with credentials"
@@ -211,7 +211,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
                 .api_server.password = $password | 
                 .api_server.jwt_secret_key = $jwt_secret | 
                 .api_server.ws_token = [$ws_token] |
-                .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14250", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
+                .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
                user_data/config_external_signals.json > user_data/config_temp.json && \
             mv user_data/config_temp.json user_data/config_external_signals.json
             success "✅ Updated Freqtrade config with manually entered credentials"
@@ -436,7 +436,7 @@ restore_database
 # Optional: quick health check via curl if available
 if command_exists curl; then
   info "🔍 Verifying API is responding..."
-  if curl -sSf "http://localhost:14250/" | grep -qi "Crypto Trading Strategy API"; then
+  if curl -sSf "http://localhost:14251/" | grep -qi "Crypto Trading Strategy API"; then
     success "✅ App API is responding correctly"
   else
     warn "⚠️  API response did not match expected content"
@@ -446,9 +446,9 @@ fi
 success "🎉 Deployment completed!"
 echo ""
 info "📊 Application URLs:"
-echo "  - App API: http://localhost:14250"
-echo "  - API Documentation: http://localhost:14250/docs"
-echo "  - API Alternative Docs: http://localhost:14250/redoc"
+echo "  - App API: http://localhost:14251"
+echo "  - API Documentation: http://localhost:14251/docs"
+echo "  - API Alternative Docs: http://localhost:14251/redoc"
 echo "  - Freqtrade API: http://localhost:6677"
 echo ""
 info "🌐 Production URLs:"

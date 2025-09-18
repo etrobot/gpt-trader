@@ -15,8 +15,8 @@ cd App
 echo "📦 Installing dependencies..."
 uv sync --quiet
 
-echo "🔥 Starting App server on http://localhost:14250"
-echo "📖 API Documentation will be available at http://localhost:14250/docs"
+echo "🔥 Starting App server on http://localhost:14251"
+echo "📖 API Documentation will be available at http://localhost:14251/docs"
 echo ""
 
-uv run uvicorn main:app --host 0.0.0.0 --port 14250 --reload
+uv run uvicorn main:app --host 0.0.0.0 --port 14251 --reload

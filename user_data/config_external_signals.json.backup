@@ -58,7 +58,7 @@
       "fZoSScRVRLhB2OToZAztwawmKdpgrxt3"
     ],
     "CORS_origins": [
-      "http://localhost:14250",
+      "http://localhost:14251",
       "https://ui01.subx.fun",
       "https://ft01.subx.fun"
     ]

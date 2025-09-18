@@ -10,7 +10,7 @@ services:
     env_file:
       - .env
     ports:
-      - "14250:8000"  # 映射容器内8000端口到宿主机14250
+      - "14251:8000"  # 映射容器内8000端口到宿主机14251
     volumes:
       - ./data:/app/data  # 持久化数据目录
       - ./user_data:/app/user_data:ro  # 读取 Freqtrade 配置以获取 API 凭据（只读）
