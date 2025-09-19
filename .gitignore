@@ -1,3 +1,25 @@
+# ============ FREQTRADE 敏感信息保护 ============
+# 配置文件 - 包含API密钥、用户名密码等
+user_data/config_external_signals.json
+user_data/config*.json
+!user_data/*.json.template
+!user_data/*.json.example
+
+# 交易数据和日志
+user_data/logs/
+user_data/backtest_results/
+user_data/plot/
+user_data/tradesv3*.sqlite
+user_data/dry_run.json
+
+# 环境变量和凭证
+.env
+.env.local
+.env.production
+*.key
+*.pem
+
+# ============ 原有忽略规则 ============
 node_modules
 .DS_Store
 # Logs
@@ -275,6 +297,10 @@ ENV/
 env.bak/
 venv.bak/
 
+# UV package manager
+uv.lock
+.uv/
+
 # Spyder project settings
 .spyderproject
 .spyproject
@@ -316,3 +342,11 @@ user_data/config_external_signals.json
 user_data/config_okx.json
 user_data/config_bybit.json
 user_data/config_external_signals.json
+
+# 策略回测系统特定文件
+results/
+backups/
+tmp_rovodev_*
+demo_results/
+test_results/
+*.log

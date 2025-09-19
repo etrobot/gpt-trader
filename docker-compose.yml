@@ -1,32 +1,7 @@
-services:
-  app:
-    build: .
-    container_name: crypto-trader
-    restart: unless-stopped
-    env_file:
-      - .env
-    ports:
-      - "14251:8000"  # App API port
-    volumes:
-      - ./data:/app/data  # 持久化数据目录
-      - ./user_data:/app/user_data:ro  # 读取 Freqtrade 配置以获取 API 凭据（只读）
-    environment:
-      - DATABASE_PATH=/app/data/crypto_data.db
-      - FREQTRADE_API_URL=http://freqtrade-bot01:8080
-      # Proxy settings (configured via .env file)
-      - HTTP_PROXY=${HTTP_PROXY:-}
-      - HTTPS_PROXY=${HTTPS_PROXY:-}
-      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,freqtrade-bot01,crypto-trader}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.crypto-trader-api.rule=Host(`api01.subx.fun`)"
-      - "traefik.http.routers.crypto-trader-api.entrypoints=websecure"
-      - "traefik.http.routers.crypto-trader-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.crypto-trader-api.loadbalancer.server.port=8000"
-    networks:
-      - traefik
-      - default
+# 单独部署 Freqtrade
+# 使用方法: docker-compose -f docker-compose.freqtrade.yml up -d
 
+services:
   freqtrade:
     image: freqtradeorg/freqtrade:stable
     container_name: freqtrade-bot01
@@ -35,7 +10,7 @@ services:
       - ./user_data:/freqtrade/user_data
     command: >
       trade --config /freqtrade/user_data/config_external_signals.json
-            --strategy ExternalSignalStrategy
+            --strategy ClassicStrategy
     environment:
       - FREQTRADE__API_SERVER__ENABLED=true
       - FREQTRADE__API_SERVER__LISTEN_IP_ADDRESS=0.0.0.0
@@ -43,9 +18,9 @@ services:
       # Proxy settings (configured via .env file)
       - HTTP_PROXY=${HTTP_PROXY:-}
       - HTTPS_PROXY=${HTTPS_PROXY:-}
-      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1,freqtrade-bot01,crypto-trader}
+      - NO_PROXY=${NO_PROXY:-localhost,127.0.0.1}
     ports:
-      - "6677:8080"
+      - "6678:8080"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.freqtrade.rule=Host(`ft01.subx.fun`)"
@@ -54,7 +29,6 @@ services:
       - "traefik.http.services.freqtrade.loadbalancer.server.port=8080"
     networks:
       - traefik
-      - default
 
 networks:
   traefik:

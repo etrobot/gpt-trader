@@ -9,17 +9,18 @@
   "stake_amount": 100,
   "tradable_balance_ratio": 0.99,
   "fiat_display_currency": "USD",
+  "force_entry_enable": true,
   "exchange": {
-    "name": "bybit",
+    "name": "okx",
     "key": "",
     "secret": "",
     "ccxt_config": {
       "enableRateLimit": true,
-      "rateLimit": 50
+      "rateLimit": 100
     },
     "ccxt_async_config": {
       "enableRateLimit": true,
-      "rateLimit": 50
+      "rateLimit": 100
     },
     "pair_whitelist": [],
     "pair_blacklist": []
@@ -27,7 +28,7 @@
   "pairlists": [
     {
       "method": "VolumePairList",
-      "number_assets": 100,
+      "number_assets": 50,
       "sort_key": "quoteVolume",
       "min_value": 0,
       "refresh_period": 1800
@@ -51,16 +52,17 @@
     "enabled": true,
     "listen_ip_address": "0.0.0.0",
     "listen_port": 8080,
-    "username": "admin_sZMy4aD6",
-    "password": "zMMfUzubhWluBcUxhwk3SkLt",
-    "jwt_secret_key": "4toXoyw2SOhj1kss5pSvgbTwe9YaACbvQyHX5hQ0DMge4cTIsmK9KwI4XgdFbeV\nGWRD4422E5xhiwvdvij6TQ",
+    "username": "admin_tIqFBDtx",
+    "password": "7v9Sy1Kp8y9wgqAvkKO2hRhI",
+    "jwt_secret_key": "6CE3397RbEOTnRckleMI3zr0bsOTUbBqx3HAGmNrSLMX5HU1zZ2rGynpCTd\ntXUUtwvrszgkpXyfdBvA",
     "ws_token": [
-      "fZoSScRVRLhB2OToZAztwawmKdpgrxt3"
+      "jOmVU8YVhwhZn5NC8lQDifO5USz3hlJy"
     ],
     "CORS_origins": [
+      "http://localhost:3000",
       "http://localhost:14251",
       "https://ui01.subx.fun",
-      "https://ft01.subx.fun"
+      "https://ftui.subx.fun"
     ]
   },
   "strategy_path": "/freqtrade/user_data/strategies"

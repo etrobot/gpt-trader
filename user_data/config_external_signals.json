@@ -52,16 +52,17 @@
     "enabled": true,
     "listen_ip_address": "0.0.0.0",
     "listen_port": 8080,
-    "username": "admin_sZMy4aD6",
-    "password": "zMMfUzubhWluBcUxhwk3SkLt",
-    "jwt_secret_key": "4toXoyw2SOhj1kss5pSvgbTwe9YaACbvQyHX5hQ0DMge4cTIsmK9KwI4XgdFbeV\nGWRD4422E5xhiwvdvij6TQ",
+    "username": "admin_uygTBABX",
+    "password": "au94TEg0nzXoWqvkxhzn4x5Z",
+    "jwt_secret_key": "Qgou3CtQqzaKVp8g7kD6UsiH9ihtgdcVWYxXaK1W2mp9E6XFr86DQQd5rnqXvie\nDp65aaDnbxIzzb6lKCQ5g",
     "ws_token": [
-      "fZoSScRVRLhB2OToZAztwawmKdpgrxt3"
+      "u3FHwkzTiOAfstnE85AjsUoKGNgJmxfx"
     ],
     "CORS_origins": [
-      "http://localhost:14250",
-      "https://btc.subx.fun",
-      "https://freq.subx.fun"
+      "http://localhost:3000",
+      "http://localhost:14251",
+      "https://ui01.subx.fun",
+      "https://ftui.subx.fun"
     ]
   },
   "strategy_path": "/freqtrade/user_data/strategies"
