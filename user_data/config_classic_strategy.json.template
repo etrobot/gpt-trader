@@ -11,16 +11,16 @@
   "fiat_display_currency": "USD",
   "force_entry_enable": true,
   "exchange": {
-    "name": "bybit",
+    "name": "okx",
     "key": "YOUR_API_KEY_HERE",
     "secret": "YOUR_API_SECRET_HERE",
     "ccxt_config": {
       "enableRateLimit": true,
-      "rateLimit": 50
+      "rateLimit": 100
     },
     "ccxt_async_config": {
       "enableRateLimit": true,
-      "rateLimit": 50
+      "rateLimit": 100
     },
     "pair_whitelist": [
       "BTC/USDT",
