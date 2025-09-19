@@ -29,8 +29,8 @@ services:
       - "traefik.http.services.freqtrade.loadbalancer.server.port=8080"
     networks:
       - traefik
+      - default
 
 networks:
   traefik:
     external: true
-    default: true
