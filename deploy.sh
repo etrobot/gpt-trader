@@ -74,9 +74,9 @@ mkdir -p data
 # Ensure Freqtrade user_data directory and config exist
 mkdir -p user_data user_data/strategies
 # Check required files exist
-if [ ! -f "user_data/strategies/ExternalSignalStrategy.py" ]; then
-  error "❌ Missing strategy file: user_data/strategies/ExternalSignalStrategy.py"
-  error "❌ Please create your trading strategy before deployment"
+if [ ! -f "user_data/strategies/classic_strategy.py" ] && [ ! -f "user_data/strategies/ExternalSignalStrategy.py" ]; then
+  error "❌ Missing trading strategy files"
+  error "❌ Please create 'user_data/strategies/classic_strategy.py' or 'user_data/strategies/ExternalSignalStrategy.py' before deployment"
   exit 1
 fi
 
