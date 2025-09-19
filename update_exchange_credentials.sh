@@ -8,7 +8,7 @@ success() { echo -e "\033[0;32m$1\033[0m"; }
 warn() { echo -e "\033[1;33m$1\033[0m"; }
 error() { echo -e "\033[0;31m$1\033[0m"; }
 
-CONFIG_FILE="user_data/config_external_signals.json"
+CONFIG_FILE="user_data/config_classic_strategy.json"
 
 if [ ! -f "$CONFIG_FILE" ]; then
     error "❌ Config file not found: $CONFIG_FILE"

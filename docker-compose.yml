@@ -9,7 +9,7 @@ services:
     volumes:
       - ./user_data:/freqtrade/user_data
     command: >
-      trade --config /freqtrade/user_data/config_external_signals.json
+      trade --config /freqtrade/user_data/config_classic_strategy.json
             --strategy ClassicStrategy
     environment:
       - FREQTRADE__API_SERVER__ENABLED=true
@@ -33,3 +33,4 @@ services:
 networks:
   traefik:
     external: true
+    default: true

@@ -1,6 +1,6 @@
 # ============ FREQTRADE 敏感信息保护 ============
 # 配置文件 - 包含API密钥、用户名密码等
-user_data/config_external_signals.json
+user_data/config_classic_strategy.json
 user_data/config*.json
 !user_data/*.json.template
 !user_data/*.json.example
@@ -337,11 +337,11 @@ cython_debug/
 /App/static/
 App/debug_output/
 data/
-user_data/config_external_signals.json.backup.*
-user_data/config_external_signals.json
+user_data/config_classic_strategy.json.backup.*
+user_data/config_classic_strategy.json
 user_data/config_okx.json
 user_data/config_bybit.json
-user_data/config_external_signals.json
+user_data/config_classic_strategy.json
 
 # 策略回测系统特定文件
 results/

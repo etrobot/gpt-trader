@@ -67,7 +67,7 @@ def run_docker_freqtrade(action, strategy="ClassicStrategy", timeframe="5m", tim
             "--strategy", strategy,
             "--timeframe", timeframe,
             "--timerange", timerange,
-            "--config", "user_data/config_external_signals.json"
+            "--config", "user_data/config_classic_strategy.json"
         ]
         print(f"📊 运行回测: {strategy}")
         
@@ -77,7 +77,7 @@ def run_docker_freqtrade(action, strategy="ClassicStrategy", timeframe="5m", tim
             "--strategy", strategy,
             "--epochs", str(epochs),
             "--hyperopt-loss", "SharpeHyperOptLoss",
-            "--config", "user_data/config_external_signals.json"
+            "--config", "user_data/config_classic_strategy.json"
         ]
         print(f"⚙️ 参数优化: {strategy} ({epochs} 轮)")
         
@@ -88,7 +88,7 @@ def run_docker_freqtrade(action, strategy="ClassicStrategy", timeframe="5m", tim
             "--pairs", "BTC/USDT", "ETH/USDT",
             "--timeframes", timeframe,
             "--days", "30",
-            "--config", "user_data/config_external_signals.json"
+            "--config", "user_data/config_classic_strategy.json"
         ]
         print("📥 下载数据...")
     

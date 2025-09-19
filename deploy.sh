@@ -81,8 +81,8 @@ if [ ! -f "user_data/strategies/classic_strategy.py" ] && [ ! -f "user_data/stra
 fi
 
 # Check if config file exists first
-if [ ! -f "user_data/config_external_signals.json" ]; then
-  error "❌ Missing config file: user_data/config_external_signals.json"
+if [ ! -f "user_data/config_classic_strategy.json" ]; then
+  error "❌ Missing config file: user_data/config_classic_strategy.json"
   error "❌ Please create your Freqtrade configuration before deployment"
   exit 1
 fi
@@ -145,14 +145,14 @@ else
 fi
 
 # Update Freqtrade config with credentials (either new or existing)
-if [ -f "user_data/config_external_signals.json" ] && [ -n "$FREQTRADE_USERNAME" ]; then
+if [ -f "user_data/config_classic_strategy.json" ] && [ -n "$FREQTRADE_USERNAME" ]; then
     info "🔧 Updating Freqtrade config with credentials..."
 
     # Create clean backup name without stacking timestamps
-    if [ -f "user_data/config_external_signals.json.backup" ]; then
-        rm -f user_data/config_external_signals.json.backup
+    if [ -f "user_data/config_classic_strategy.json.backup" ]; then
+        rm -f user_data/config_classic_strategy.json.backup
     fi
-    cp user_data/config_external_signals.json user_data/config_external_signals.json.backup
+    cp user_data/config_classic_strategy.json user_data/config_classic_strategy.json.backup
 
     # Update existing config with credentials using jq if available
     if command_exists jq; then
@@ -165,11 +165,11 @@ if [ -f "user_data/config_external_signals.json" ] && [ -n "$FREQTRADE_USERNAME"
             .api_server.jwt_secret_key = $jwt_secret |
             .api_server.ws_token = [$ws_token] |
             .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
-           user_data/config_external_signals.json > user_data/config_temp.json && \
-        mv user_data/config_temp.json user_data/config_external_signals.json
+           user_data/config_classic_strategy.json > user_data/config_temp.json && \
+        mv user_data/config_temp.json user_data/config_classic_strategy.json
         success "✅ Updated Freqtrade config with credentials"
     else
-        warn "⚠️  jq not available - please manually update API credentials in user_data/config_external_signals.json"
+        warn "⚠️  jq not available - please manually update API credentials in user_data/config_classic_strategy.json"
     fi
 fi
 
@@ -195,13 +195,13 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
         read -p "WebSocket Token: " WS_TOKEN
 
         # Update user_data config with manually entered credentials
-        if [ -f "user_data/config_external_signals.json" ] && command_exists jq; then
+        if [ -f "user_data/config_classic_strategy.json" ] && command_exists jq; then
             info "🔧 Updating Freqtrade config with manually entered credentials..."
             # Create clean backup name without stacking timestamps
-            if [ -f "user_data/config_external_signals.json.backup" ]; then
-                rm -f user_data/config_external_signals.json.backup
+            if [ -f "user_data/config_classic_strategy.json.backup" ]; then
+                rm -f user_data/config_classic_strategy.json.backup
             fi
-            cp user_data/config_external_signals.json user_data/config_external_signals.json.backup
+            cp user_data/config_classic_strategy.json user_data/config_classic_strategy.json.backup
 
             jq --arg username "$FREQTRADE_USERNAME" \
                --arg password "$FREQTRADE_PASSWORD" \
@@ -212,8 +212,8 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
                 .api_server.jwt_secret_key = $jwt_secret |
                 .api_server.ws_token = [$ws_token] |
                 .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
-               user_data/config_external_signals.json > user_data/config_temp.json && \
-            mv user_data/config_temp.json user_data/config_external_signals.json
+               user_data/config_classic_strategy.json > user_data/config_temp.json && \
+            mv user_data/config_temp.json user_data/config_classic_strategy.json
             success "✅ Updated Freqtrade config with manually entered credentials"
         fi
     else
@@ -223,7 +223,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
     # Get Freqtrade API URL for app-only deployment
     if [ "$DEPLOY_MODE" = "app" ]; then
         echo ""
-        info "🔗 External Freqtrade Configuration"
+        info "🔗 Classic Freqtrade Configuration"
         echo "Common options:"
         echo "  - http://host.docker.internal:6677  (if Freqtrade runs on host)"
         echo "  - http://192.168.1.100:6677         (remote server)"
@@ -270,7 +270,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
             fi
 
             # Update Freqtrade config with proxy settings
-            if [ -f "user_data/config_external_signals.json" ] && command_exists jq; then
+            if [ -f "user_data/config_classic_strategy.json" ] && command_exists jq; then
                 info "🔧 Adding proxy settings to Freqtrade config..."
                 jq --arg proxy_url "$PROXY_URL" \
                    '.exchange.ccxt_config.proxies = {
@@ -281,8 +281,8 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
                       "http": $proxy_url,
                       "https": $proxy_url
                     }' \
-                   user_data/config_external_signals.json > user_data/config_temp.json && \
-                mv user_data/config_temp.json user_data/config_external_signals.json
+                   user_data/config_classic_strategy.json > user_data/config_temp.json && \
+                mv user_data/config_temp.json user_data/config_classic_strategy.json
                 success "✅ Added proxy settings to Freqtrade config"
             fi
             success "✅ Proxy configured: ${PROXY_URL}"
@@ -453,7 +453,7 @@ echo "  4. Never commit .env file to version control"
 echo ""
 info "📁 Data persistence:"
 echo "  - Database: ./data/crypto_data.db"
-echo "  - Freqtrade config: ./user_data/config_external_signals.json"
+echo "  - Freqtrade config: ./user_data/config_classic_strategy.json"
 echo "  - Environment vars: ./.env"
 echo ""
 info "🔧 Useful commands:"

@@ -58,7 +58,7 @@ python strategy_manager.py
 - **Risk management**: 5% stop loss, ROI table with decreasing targets
 
 ### Configuration Structure
-- **`user_data/config_external_signals.json`**: Main Freqtrade configuration
+- **`user_data/config_classic_strategy.json`**: Main Freqtrade configuration
 - **`.env`**: API keys and sensitive settings
 - **`user_data/strategy_backups/`**: Automatic strategy backups before modifications
 - **`user_data/backtest_results/`**: Backtest and optimization results storage

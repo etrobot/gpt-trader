@@ -45,7 +45,7 @@ python backtest.py --action hyperopt --epochs 50
 │   ├── strategies/
 │   │   └── classic_strategy.py  # K线形态策略
 │   ├── strategy_backups/     # 策略备份目录
-│   └── config_external_signals.json  # Freqtrade 配置
+│   └── config_classic_strategy.json  # Freqtrade 配置
 └── pyproject.toml           # 项目配置
 ```
 
