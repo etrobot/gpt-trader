@@ -80,11 +80,16 @@ if [ ! -f "user_data/strategies/classic_strategy.py" ] && [ ! -f "user_data/stra
   exit 1
 fi
 
-# Check if config file exists first
+# Check if config file exists first; if missing, try to create from template
 if [ ! -f "user_data/config_classic_strategy.json" ]; then
-  error "❌ Missing config file: user_data/config_classic_strategy.json"
-  error "❌ Please create your Freqtrade configuration before deployment"
-  exit 1
+  warn "⚠️  未找到 user_data/config_classic_strategy.json，尝试从模板创建..."
+  if [ -f "user_data/config_classic_strategy.json.template" ]; then
+    cp user_data/config_classic_strategy.json.template user_data/config_classic_strategy.json
+    success "✅ 已从模板创建 user_data/config_classic_strategy.json"
+  else
+    error "❌ 缺少配置文件与模板，请先提供 user_data/config_classic_strategy.json 或 user_data/config_classic_strategy.json.template"
+    exit 1
+  fi
 fi
 
 # Check if .env file already exists first
