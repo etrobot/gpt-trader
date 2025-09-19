@@ -1,5 +1,5 @@
 {
-  "bot_name": "external-signals-bot",
+  "bot_name": "classic-bot",
   "strategy": "classic_strategy.py",
   "dry_run": true,
   "timeframe": "5m",

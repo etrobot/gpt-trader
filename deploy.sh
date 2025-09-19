@@ -19,21 +19,21 @@ generate_secure_key() {
 # Function to generate API credentials
 generate_api_credentials() {
     info "🔐 Generating secure API credentials..."
-    
+
     # Generate secure credentials
     FREQTRADE_USERNAME="admin_$(generate_secure_key 8)"
     FREQTRADE_PASSWORD=$(generate_secure_key 24)
     JWT_SECRET=$(generate_secure_key 64)
     WS_TOKEN=$(generate_secure_key 32)
-    
+
     # Generate exchange API keys placeholders (only needed for live trading)
     BYBIT_API_KEY="DEMO_API_KEY_FOR_DRY_RUN"
     BYBIT_SECRET="DEMO_SECRET_FOR_DRY_RUN"
-    
+
     success "✅ Generated secure credentials"
     info "ℹ️  Dry-run mode enabled - using demo API keys (safe for testing)"
     warn "⚠️  For live trading, update Bybit API credentials using: ./update_exchange_credentials.sh"
-    
+
     echo ""
     info "🔐 Generated Freqtrade Credentials:"
     echo "  Username: ${FREQTRADE_USERNAME}"
@@ -74,9 +74,9 @@ mkdir -p data
 # Ensure Freqtrade user_data directory and config exist
 mkdir -p user_data user_data/strategies
 # Check required files exist
-if [ ! -f "user_data/strategies/classic_strategy.py" ] && [ ! -f "user_data/strategies/ExternalSignalStrategy.py" ]; then
+if [ ! -f "user_data/strategies/classic_strategy.py" ] && [ ! -f "user_data/strategies/classic_strategy.py" ]; then
   error "❌ Missing trading strategy files"
-  error "❌ Please create 'user_data/strategies/classic_strategy.py' or 'user_data/strategies/ExternalSignalStrategy.py' before deployment"
+  error "❌ Please create 'user_data/strategies/classic_strategy.py' or 'user_data/strategies/classic_strategy.py' before deployment"
   exit 1
 fi
 
@@ -97,18 +97,18 @@ if [ -f ".env" ]; then
     cat .env
     echo "========================================"
     echo ""
-    
+
     read -p "Do you want to recreate the .env file with new credentials? (y/N): " RECREATE_ENV
-    
+
     if [[ ! "$RECREATE_ENV" =~ ^[Yy]$ ]]; then
         info "ℹ️  Keeping existing .env file. Deployment will continue with current settings."
         echo ""
         info "📝 If you need to update credentials later, you can:"
         echo "  - Run this script again and choose to recreate"
-        echo "  - Use ./update_openai_credentials.sh for OpenAI API key"
+        # OpenAI credentials no longer required
         echo "  - Edit .env file manually"
         echo ""
-        
+
         # Skip credential input if keeping existing .env
         SKIP_ENV_CREATION=true
         SKIP_CREDENTIAL_GENERATION=true
@@ -147,22 +147,22 @@ fi
 # Update Freqtrade config with credentials (either new or existing)
 if [ -f "user_data/config_external_signals.json" ] && [ -n "$FREQTRADE_USERNAME" ]; then
     info "🔧 Updating Freqtrade config with credentials..."
-    
+
     # Create clean backup name without stacking timestamps
     if [ -f "user_data/config_external_signals.json.backup" ]; then
         rm -f user_data/config_external_signals.json.backup
     fi
     cp user_data/config_external_signals.json user_data/config_external_signals.json.backup
-    
+
     # Update existing config with credentials using jq if available
     if command_exists jq; then
         jq --arg username "$FREQTRADE_USERNAME" \
            --arg password "$FREQTRADE_PASSWORD" \
            --arg jwt_secret "$JWT_SECRET" \
            --arg ws_token "$WS_TOKEN" \
-           '.api_server.username = $username | 
-            .api_server.password = $password | 
-            .api_server.jwt_secret_key = $jwt_secret | 
+           '.api_server.username = $username |
+            .api_server.password = $password |
+            .api_server.jwt_secret_key = $jwt_secret |
             .api_server.ws_token = [$ws_token] |
             .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
            user_data/config_external_signals.json > user_data/config_temp.json && \
@@ -185,7 +185,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
     echo "  - WebSocket Token: ${WS_TOKEN:0:10}..."
     echo ""
     read -p "Do you want to use these newly generated credentials? (Y/n): " USE_NEW_CREDS
-    
+
     if [[ "$USE_NEW_CREDS" =~ ^[Nn]$ ]]; then
         echo ""
         info "📋 Please enter your preferred credentials (or copy from the .env backup shown above):"
@@ -193,7 +193,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
         read -p "Freqtrade Password: " FREQTRADE_PASSWORD
         read -p "JWT Secret Key: " JWT_SECRET
         read -p "WebSocket Token: " WS_TOKEN
-        
+
         # Update user_data config with manually entered credentials
         if [ -f "user_data/config_external_signals.json" ] && command_exists jq; then
             info "🔧 Updating Freqtrade config with manually entered credentials..."
@@ -202,14 +202,14 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
                 rm -f user_data/config_external_signals.json.backup
             fi
             cp user_data/config_external_signals.json user_data/config_external_signals.json.backup
-            
+
             jq --arg username "$FREQTRADE_USERNAME" \
                --arg password "$FREQTRADE_PASSWORD" \
                --arg jwt_secret "$JWT_SECRET" \
                --arg ws_token "$WS_TOKEN" \
-               '.api_server.username = $username | 
-                .api_server.password = $password | 
-                .api_server.jwt_secret_key = $jwt_secret | 
+               '.api_server.username = $username |
+                .api_server.password = $password |
+                .api_server.jwt_secret_key = $jwt_secret |
                 .api_server.ws_token = [$ws_token] |
                 .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
                user_data/config_external_signals.json > user_data/config_temp.json && \
@@ -248,7 +248,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
         read -p "Enter proxy URL (format: http://username:password@proxy.server:port): " PROXY_URL
         if [ -n "$PROXY_URL" ]; then
             info "🔧 Configuring proxy settings..."
-            
+
             # Update docker-compose.yml with proxy settings
             if [ -f "docker-compose.yml" ]; then
                 # Check if proxy environment variables already exist
@@ -268,7 +268,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
                 fi
                 rm -f docker-compose.yml.bak
             fi
-            
+
             # Update Freqtrade config with proxy settings
             if [ -f "user_data/config_external_signals.json" ] && command_exists jq; then
                 info "🔧 Adding proxy settings to Freqtrade config..."
@@ -276,7 +276,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
                    '.exchange.ccxt_config.proxies = {
                       "http": $proxy_url,
                       "https": $proxy_url
-                    } | 
+                    } |
                     .exchange.ccxt_async_config.proxies = {
                       "http": $proxy_url,
                       "https": $proxy_url
@@ -293,23 +293,8 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
         info "ℹ️  No proxy configured"
     fi
 
-    # Get OpenAI API credentials
-    echo ""
-    info "🤖 OpenAI API Configuration"
-    read -p "Enter your OpenAI API Key: " OPENAI_KEY
-    read -p "Enter OpenAI Base URL (default: https://api.openai.com/v1): " OPENAI_BASE_URL
-
-    # Use default if empty
-    if [ -z "$OPENAI_BASE_URL" ]; then
-        OPENAI_BASE_URL="https://api.openai.com/v1"
-    fi
-
-    info "📝 Creating .env file with API credentials..."
+    info "📝 Creating .env file with credentials..."
     cat > .env << EOF
-# OpenAI API Configuration
-OPENAI_API_KEY=${OPENAI_KEY}
-OPENAI_BASE_URL=${OPENAI_BASE_URL}
-
 # Freqtrade API Configuration
 FREQTRADE_API_URL=${FREQTRADE_API_URL:-http://freqtrade-bot01:8080}
 FREQTRADE_API_USERNAME=${FREQTRADE_USERNAME}
@@ -324,7 +309,6 @@ PROXY_URL=${PROXY_URL}
 JWT_SECRET_KEY=${JWT_SECRET}
 WS_TOKEN=${WS_TOKEN}
 EOF
-    success "✅ OpenAI API key configured"
     success "✅ Created .env file with secure credentials"
 fi
 
@@ -332,7 +316,7 @@ fi
 backup_database() {
   local db_path="./data/crypto_data.db"
   local backup_path="./data/crypto_data.db.backup"
-  
+
   if [ -f "$db_path" ]; then
     info "💾 Backing up existing database..."
     # Remove old backup if it exists to avoid stacking names
@@ -350,12 +334,12 @@ backup_database() {
 # Restore database from backup if needed
 restore_database() {
   local backup_path_file="./data/.last_backup_path"
-  
+
   if [ -f "$backup_path_file" ]; then
     local backup_path=$(cat "$backup_path_file")
     if [ -f "$backup_path" ]; then
       info "🔄 Checking if database restore is needed..."
-      
+
       # Check if current database exists and is valid
       if [ ! -f "./data/crypto_data.db" ]; then
         warn "⚠️  Database not found after deployment, restoring from backup..."
@@ -462,11 +446,10 @@ echo "  - WebSocket Token: ${WS_TOKEN}"
 echo "  - JWT Secret: ${JWT_SECRET:0:10}..."
 echo ""
 warn "⚠️  IMPORTANT SETUP NOTES:"
-echo "  1. Update OpenAI API key: ./update_openai_credentials.sh"
-echo "  2. System is in DRY-RUN mode (safe, no real trading)"
-echo "  3. For live trading: ./update_exchange_credentials.sh"
-echo "  4. Save the credentials above in a secure location"
-echo "  5. Never commit .env file to version control"
+echo "  1. System is in DRY-RUN mode (safe, no real trading)"
+echo "  2. For live trading: ./update_exchange_credentials.sh"
+echo "  3. Save the credentials above in a secure location"
+echo "  4. Never commit .env file to version control"
 echo ""
 info "📁 Data persistence:"
 echo "  - Database: ./data/crypto_data.db"

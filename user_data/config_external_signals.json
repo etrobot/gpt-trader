@@ -1,6 +1,6 @@
 {
-  "bot_name": "external-signals-bot",
-  "strategy": "ExternalSignalStrategy",
+  "bot_name": "classic-bot",
+  "strategy": "classic_strategy",
   "dry_run": true,
   "timeframe": "5m",
   "startup_candle_count": 50,
