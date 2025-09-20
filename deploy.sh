@@ -169,7 +169,7 @@ if [ -f "user_data/config_classic_strategy.json" ] && [ -n "$FREQTRADE_USERNAME"
             .api_server.password = $password |
             .api_server.jwt_secret_key = $jwt_secret |
             .api_server.ws_token = [$ws_token] |
-            .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
+            .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251"]' \
            user_data/config_classic_strategy.json > user_data/config_temp.json && \
         mv user_data/config_temp.json user_data/config_classic_strategy.json
         success "✅ Updated Freqtrade config with credentials"
@@ -216,7 +216,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
                 .api_server.password = $password |
                 .api_server.jwt_secret_key = $jwt_secret |
                 .api_server.ws_token = [$ws_token] |
-                .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", "https://ui01.subx.fun", "https://ftui.subx.fun"]' \
+                .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251"]' \
                user_data/config_classic_strategy.json > user_data/config_temp.json && \
             mv user_data/config_temp.json user_data/config_classic_strategy.json
             success "✅ Updated Freqtrade config with manually entered credentials"
@@ -467,19 +467,31 @@ restore_database
 
 # Test Freqtrade API and start simulation trading
 info "🔍 Testing Freqtrade API connectivity..."
+
+# Determine API URL based on deployment mode
+if [ "$DEPLOY_MODE" = "app" ] && [ -n "$FREQTRADE_API_URL" ]; then
+  API_TEST_URL="$FREQTRADE_API_URL"
+elif [ "$FREQTRADE_HOST" != "localhost" ] && [ -n "$FREQTRADE_HOST" ]; then
+  API_TEST_URL="https://${FREQTRADE_HOST}"
+else
+  API_TEST_URL="http://localhost:6678"
+fi
+
+info "📡 Using API URL: $API_TEST_URL"
+
 if command_exists curl; then
   # Test API ping
-  if curl -sSf "http://localhost:6678/api/v1/ping" | grep -qi "pong"; then
+  if curl -sSf "${API_TEST_URL}/api/v1/ping" | grep -qi "pong"; then
     success "✅ Freqtrade API is responding correctly"
     
     # Test API authentication
     info "🔐 Testing API authentication..."
-    if curl -sSf -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "http://localhost:6678/api/v1/whitelist" | grep -qi "whitelist"; then
+    if curl -sSf -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "${API_TEST_URL}/api/v1/whitelist" | grep -qi "whitelist"; then
       success "✅ Freqtrade API authentication successful"
       
       # Start simulation trading
       info "🚀 Starting simulation trading..."
-      TRADING_RESPONSE=$(curl -s -X POST -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "http://localhost:6678/api/v1/start")
+      TRADING_RESPONSE=$(curl -s -X POST -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "${API_TEST_URL}/api/v1/start")
       
       if echo "$TRADING_RESPONSE" | grep -qi "starting\|already running"; then
         success "✅ Simulation trading started successfully"
@@ -490,7 +502,7 @@ if command_exists curl; then
         
         # Check trading status
         info "📊 Checking trading status..."
-        TRADE_COUNT=$(curl -s -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "http://localhost:6678/api/v1/status" | grep -o '"trade_id"' | wc -l)
+        TRADE_COUNT=$(curl -s -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "${API_TEST_URL}/api/v1/status" | grep -o '"trade_id"' | wc -l)
         if [ "$TRADE_COUNT" -gt 0 ]; then
           success "✅ Active trades detected: $TRADE_COUNT trades"
         else
@@ -499,7 +511,7 @@ if command_exists curl; then
         
         # Show trading pairs
         info "📈 Trading pairs loaded:"
-        curl -s -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "http://localhost:6678/api/v1/whitelist" | grep -o '"[A-Z][A-Z]*/[A-Z][A-Z]*"' | head -5 | sed 's/"//g' | sed 's/^/  - /'
+        curl -s -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "${API_TEST_URL}/api/v1/whitelist" | grep -o '"[A-Z][A-Z]*/[A-Z][A-Z]*"' | head -5 | sed 's/"//g' | sed 's/^/  - /'
         
       else
         warn "⚠️  Failed to start simulation trading: $TRADING_RESPONSE"
@@ -514,24 +526,10 @@ else
   warn "⚠️  curl not available - skipping API tests"
 fi
 
-# Optional: quick health check via curl if available
-if command_exists curl; then
-  info "🔍 Verifying App API is responding..."
-  if curl -sSf "http://localhost:14251/" | grep -qi "Crypto Trading Strategy API"; then
-    success "✅ App API is responding correctly"
-  else
-    warn "⚠️  App API response did not match expected content"
-  fi
-fi
-
 success "🎉 Deployment completed!"
 echo ""
 info "🚀 Deploy Mode: ${DEPLOY_MODE_DISPLAY:-Development (localhost)}"
 echo ""
-info "📊 Application URLs:"
-echo "  - App API: http://localhost:14251"
-echo "  - API Documentation: http://localhost:14251/docs"
-echo "  - API Alternative Docs: http://localhost:14251/redoc"
 echo "  - Freqtrade API: http://localhost:6678"
 echo ""
 info "🐳 Docker Network URLs (for production):"
@@ -540,9 +538,11 @@ echo "  - Network: gpt-trader_default"
 echo ""
 info "🌐 Production URLs:"
 if [ "$FREQTRADE_HOST" != "localhost" ] && [ -n "$FREQTRADE_HOST" ]; then
-  echo "  - FreqTrade API: https://${FREQTRADE_HOST}"
+  echo "  - Freqtrade API: https://${FREQTRADE_HOST}"
+  echo "  - Freqtrade UI: https://${FREQTRADE_HOST}"
 else
-  echo "  - FreqTrade API: http://localhost:6678 (development mode)"
+  echo "  - Freqtrade API: http://localhost:6678 (development mode)"
+  echo "  - Freqtrade UI: http://localhost:6678 (development mode)"
 fi
 echo ""
 info "🔐 Security Information:"

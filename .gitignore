@@ -340,7 +340,6 @@ data/
 user_data/config_classic_strategy.json.backup.*
 user_data/config_classic_strategy.json
 user_data/config_okx.json
-user_data/config_bybit.json
 user_data/config_classic_strategy.json
 
 # 策略回测系统特定文件
