@@ -22,18 +22,39 @@
       "enableRateLimit": true,
       "rateLimit": 100
     },
-    "pair_whitelist": [
-      "BTC/USDT",
-      "ETH/USDT",
-      "SOL/USDT",
-      "BNB/USDT",
-      "ADA/USDT"
-    ],
-    "pair_blacklist": []
+    "pair_whitelist": [],
+    "pair_blacklist": [
+      ".*_PREMIUM",
+      ".*_DISCOUNT",
+      ".*UP/.*",
+      ".*DOWN/.*",
+      ".*BEAR/.*",
+      ".*BULL/.*"
+    ]
   },
   "pairlists": [
     {
-      "method": "StaticPairList"
+      "method": "VolumePairList",
+      "number_assets": 7,
+      "sort_key": "quoteVolume",
+      "min_value": 10000000,
+      "refresh_period": 3600
+    },
+    {
+      "method": "AgeFilter",
+      "min_days_listed": 7
+    },
+    {
+      "method": "PrecisionFilter"
+    },
+    {
+      "method": "PriceFilter",
+      "low_price_ratio": 0.01,
+      "min_price": 0.0001
+    },
+    {
+      "method": "SpreadFilter",
+      "max_spread_ratio": 0.005
     }
   ],
   "unfilledtimeout": {
@@ -61,7 +82,10 @@
       "YOUR_WS_TOKEN_HERE"
     ],
     "CORS_origins": [
-      "http://localhost:14251"
+      "http://localhost:3000",
+      "http://localhost:14251",
+      "https://ui01.subx.fun",
+      "https://ftui.subx.fun"
     ]
   },
   "strategy_path": "/freqtrade/user_data/strategies"

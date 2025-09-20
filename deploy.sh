@@ -55,7 +55,7 @@ case "$DEPLOY_MODE" in
     info "🚀 Starting crypto-trader only deployment..."
     ;;
   "freqtrade")
-    COMPOSE_FILE="docker-compose.freqtrade.yml"
+    COMPOSE_FILE="docker-compose.yml"
     info "🚀 Starting freqtrade only deployment..."
     ;;
   *)
@@ -422,13 +422,62 @@ docker-compose -f $COMPOSE_FILE ps
 # Restore database if needed
 restore_database
 
+# Test Freqtrade API and start simulation trading
+info "🔍 Testing Freqtrade API connectivity..."
+if command_exists curl; then
+  # Test API ping
+  if curl -sSf "http://localhost:6678/api/v1/ping" | grep -qi "pong"; then
+    success "✅ Freqtrade API is responding correctly"
+    
+    # Test API authentication
+    info "🔐 Testing API authentication..."
+    if curl -sSf -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "http://localhost:6678/api/v1/whitelist" | grep -qi "whitelist"; then
+      success "✅ Freqtrade API authentication successful"
+      
+      # Start simulation trading
+      info "🚀 Starting simulation trading..."
+      TRADING_RESPONSE=$(curl -s -X POST -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "http://localhost:6678/api/v1/start")
+      
+      if echo "$TRADING_RESPONSE" | grep -qi "starting\|already running"; then
+        success "✅ Simulation trading started successfully"
+        
+        # Wait a moment for trades to initialize
+        info "⏳ Waiting for initial trades to execute..."
+        sleep 10
+        
+        # Check trading status
+        info "📊 Checking trading status..."
+        TRADE_COUNT=$(curl -s -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "http://localhost:6678/api/v1/status" | grep -o '"trade_id"' | wc -l)
+        if [ "$TRADE_COUNT" -gt 0 ]; then
+          success "✅ Active trades detected: $TRADE_COUNT trades"
+        else
+          info "ℹ️  No active trades yet (this is normal for new strategies)"
+        fi
+        
+        # Show trading pairs
+        info "📈 Trading pairs loaded:"
+        curl -s -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "http://localhost:6678/api/v1/whitelist" | grep -o '"[A-Z][A-Z]*/[A-Z][A-Z]*"' | head -5 | sed 's/"//g' | sed 's/^/  - /'
+        
+      else
+        warn "⚠️  Failed to start simulation trading: $TRADING_RESPONSE"
+      fi
+    else
+      warn "⚠️  Freqtrade API authentication failed"
+    fi
+  else
+    warn "⚠️  Freqtrade API is not responding"
+  fi
+else
+  warn "⚠️  curl not available - skipping API tests"
+fi
+
 # Optional: quick health check via curl if available
 if command_exists curl; then
-  info "🔍 Verifying API is responding..."
+  info "🔍 Verifying App API is responding..."
   if curl -sSf "http://localhost:14251/" | grep -qi "Crypto Trading Strategy API"; then
     success "✅ App API is responding correctly"
   else
-    warn "⚠️  API response did not match expected content"
+    warn "⚠️  App API response did not match expected content"
   fi
 fi
 
@@ -438,10 +487,13 @@ info "📊 Application URLs:"
 echo "  - App API: http://localhost:14251"
 echo "  - API Documentation: http://localhost:14251/docs"
 echo "  - API Alternative Docs: http://localhost:14251/redoc"
-echo "  - Freqtrade API: http://localhost:6677"
+echo "  - Freqtrade API: http://localhost:6678"
+echo ""
+info "🐳 Docker Network URLs (for production):"
+echo "  - Freqtrade API: http://freqtrade-bot01:8080"
+echo "  - Network: gpt-trader_default"
 echo ""
 info "🌐 Production URLs:"
-echo "  - App API: https://api01.subx.fun"
 echo "  - FreqTrade API: https://ft01.subx.fun"
 echo ""
 info "🔐 Security Information:"
