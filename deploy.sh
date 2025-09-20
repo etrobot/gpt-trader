@@ -27,12 +27,12 @@ generate_api_credentials() {
     WS_TOKEN=$(generate_secure_key 32)
 
     # Generate exchange API keys placeholders (only needed for live trading)
-    BYBIT_API_KEY="DEMO_API_KEY_FOR_DRY_RUN"
-    BYBIT_SECRET="DEMO_SECRET_FOR_DRY_RUN"
+    OKX_API_KEY="DEMO_API_KEY_FOR_DRY_RUN"
+    OKX_SECRET="DEMO_SECRET_FOR_DRY_RUN"
 
     success "✅ Generated secure credentials"
     info "ℹ️  Dry-run mode enabled - using demo API keys (safe for testing)"
-    warn "⚠️  For live trading, update Bybit API credentials using: ./update_exchange_credentials.sh"
+    warn "⚠️  For live trading, update OKX API credentials using: ./update_exchange_credentials.sh"
 
     echo ""
     info "🔐 Generated Freqtrade Credentials:"
@@ -241,6 +241,49 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
             exit 1
         fi
         info "✅ Freqtrade API URL set to: $FREQTRADE_API_URL"
+    fi
+
+    # Get HOST configuration
+    echo ""
+    info "🌐 Host Configuration"
+    echo "Configure the domain/host for Freqtrade access:"
+    echo "  - Leave empty: Use localhost (development mode)"
+    echo "  - Enter domain: Use custom domain with Traefik (production mode)"
+    echo "  - Examples: ft01.subx.fun, trading.mydomain.com"
+    read -p "Enter host domain (or press Enter for localhost): " FREQTRADE_HOST
+
+    if [ -n "$FREQTRADE_HOST" ]; then
+        info "✅ Production mode: Using domain $FREQTRADE_HOST"
+        # Update docker-compose.yml with custom domain
+        if [ -f "docker-compose.yml" ]; then
+            # Update the Traefik host rule
+            sed -i.bak "s|Host(\`.*\`)|Host(\`${FREQTRADE_HOST}\`)|g" docker-compose.yml
+            success "✅ Updated docker-compose.yml with domain: $FREQTRADE_HOST"
+            rm -f docker-compose.yml.bak
+        fi
+
+        # Update CORS origins in config
+        if [ -f "user_data/config_classic_strategy.json" ] && command_exists jq; then
+            info "🔧 Adding domain to CORS origins..."
+            jq --arg domain "$FREQTRADE_HOST" \
+               '.api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", ("https://" + $domain), ("http://" + $domain)]' \
+               user_data/config_classic_strategy.json > user_data/config_temp.json && \
+            mv user_data/config_temp.json user_data/config_classic_strategy.json
+            success "✅ Added $FREQTRADE_HOST to CORS origins"
+        fi
+
+        DEPLOY_MODE_DISPLAY="Production (with domain)"
+    else
+        info "✅ Development mode: Using localhost"
+        # Remove Traefik labels for localhost mode
+        if [ -f "docker-compose.yml" ]; then
+            # Comment out Traefik labels for localhost deployment
+            sed -i.bak '/traefik\.enable=true/,/traefik\.http\.services\.freqtrade\.loadbalancer\.server\.port=8080/ s/^/      # /' docker-compose.yml
+            success "✅ Configured for localhost deployment (Traefik disabled)"
+            rm -f docker-compose.yml.bak
+        fi
+        DEPLOY_MODE_DISPLAY="Development (localhost)"
+        FREQTRADE_HOST="localhost"
     fi
 
     # Get proxy configuration
@@ -483,6 +526,8 @@ fi
 
 success "🎉 Deployment completed!"
 echo ""
+info "🚀 Deploy Mode: ${DEPLOY_MODE_DISPLAY:-Development (localhost)}"
+echo ""
 info "📊 Application URLs:"
 echo "  - App API: http://localhost:14251"
 echo "  - API Documentation: http://localhost:14251/docs"
@@ -494,7 +539,11 @@ echo "  - Freqtrade API: http://freqtrade-bot01:8080"
 echo "  - Network: gpt-trader_default"
 echo ""
 info "🌐 Production URLs:"
-echo "  - FreqTrade API: https://ft01.subx.fun"
+if [ "$FREQTRADE_HOST" != "localhost" ] && [ -n "$FREQTRADE_HOST" ]; then
+  echo "  - FreqTrade API: https://${FREQTRADE_HOST}"
+else
+  echo "  - FreqTrade API: http://localhost:6678 (development mode)"
+fi
 echo ""
 info "🔐 Security Information:"
 echo "  - Freqtrade Username: ${FREQTRADE_USERNAME}"

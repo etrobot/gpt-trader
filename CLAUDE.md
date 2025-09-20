@@ -102,6 +102,6 @@ python strategy_manager.py
 - Container restart policies for production deployment
 
 ### Market Data
-- Supports multiple exchanges (Binance, OKX, Bybit)
+- Supports multiple exchanges (Binance, OKX)
 - Configurable timeframes (default: 5m)
 - Automatic data download for optimization periods

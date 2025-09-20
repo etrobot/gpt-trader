@@ -21,7 +21,7 @@ echo "=================================="
 echo ""
 
 # Get current exchange name
-CURRENT_EXCHANGE=$(jq -r '.exchange.name' "$CONFIG_FILE" 2>/dev/null || echo "bybit")
+CURRENT_EXCHANGE=$(jq -r '.exchange.name' "$CONFIG_FILE" 2>/dev/null || echo "okx")
 echo "Current exchange: $CURRENT_EXCHANGE"
 echo ""
 
