@@ -410,34 +410,11 @@ restore_database() {
 # Backup database before deployment
 backup_database
 
-# If docker is not available or explicitly skipped, run local validation to test routes
-if [ "$SKIP_DOCKER" = "1" ] || ! command_exists docker || ! command_exists docker-compose; then
-  warn "⚠️  未检测到 Docker 或 docker-compose，进入本地测试模式（不启动容器）..."
-
-  # Validate that App can serve SPA without a prebuilt static folder
-  if grep -q "@app.get(\"/{full_path:path}\")" App/main.py; then
-    success "✅ 检测到通配路由，支持SPA前端"
-  else
-    warn "⚠️  未检测到通配路由，请检查 App/main.py"
-  fi
-
-  # Frontend build is optional in local mode
-  if [ -f "App/static/index.html" ]; then
-    success "✅ 检测到 App/static/index.html"
-  else
-    warn "ℹ️  本地未发现构建后的前端，将返回API信息或需要自行构建前端"
-  fi
-
-  # Check static mounts
-  [ -d "App/static/assets" ] && success "✅ 检测到静态资源目录 App/static/assets" || warn "⚠️  未检测到 App/static/assets"
-  [ -d "App/static/icons" ] && success "✅ 检测到图标目录 App/static/icons" || warn "⚠️  未检测到 App/static/icons"
-  [ -f "App/static/manifest.json" ] && success "✅ 检测到 PWA 文件 manifest.json" || warn "⚠️  未检测到 manifest.json"
-  [ -f "App/static/sw.js" ] && success "✅ 检测到 PWA 文件 sw.js" || warn "⚠️  未检测到 sw.js"
-
-  success "🎉 本地路由检查通过：根路径将返回前端 index.html"
-  echo ""
-  info "👉 你可以在安装 Docker 后再次运行本脚本进行完整部署"
-  exit 0
+# Require docker and docker-compose
+if ! command_exists docker || ! command_exists docker-compose; then
+  error "❌ Docker and docker-compose are required to run this deployment."
+  error "Please install Docker and docker-compose, then re-run: ./deploy.sh [all|app|freqtrade]"
+  exit 1
 fi
 
 # Create Traefik network if it doesn't exist
