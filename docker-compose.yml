@@ -9,7 +9,7 @@ services:
     volumes:
       - ./user_data:/freqtrade/user_data
     command: >
-      trade --config /freqtrade/user_data/config_classic_strategy.json
+      trade --config /freqtrade/user_data/config_classic_strategy_new.json
             --strategy ClassicStrategy
     environment:
       - FREQTRADE__API_SERVER__ENABLED=true

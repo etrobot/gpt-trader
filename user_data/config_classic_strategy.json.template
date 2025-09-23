@@ -2,8 +2,8 @@
   "bot_name": "classic-bot",
   "strategy": "ClassicStrategy",
   "dry_run": true,
-  "timeframe": "5m",
-  "startup_candle_count": 50,
+  "timeframe": "3m",
+  "startup_candle_count": 30,
   "max_open_trades": 3,
   "stake_currency": "USDT",
   "stake_amount": 100,
@@ -23,20 +23,15 @@
       "rateLimit": 100
     }
   },
-  "pair_whitelist": [
-    "BTC/USDT",
-    "ETH/USDT"
-  ],
-  "pair_blacklist": [
-    ".*_PREMIUM",
-    ".*_DISCOUNT",
-    ".*UP/.*",
-    ".*DOWN/.*",
-    ".*BEAR/.*",
-    ".*BULL/.*"
-  ],
   "pairlists": [
     { "method": "StaticPairList" }
+  ],
+  "pair_whitelist": [
+    "BTC/USDT",
+    "ETH/USDT",
+    "SOL/USDT",
+    "XRP/USDT",
+    "ADA/USDT"
   ],
   "unfilledtimeout": {
     "entry": 10,

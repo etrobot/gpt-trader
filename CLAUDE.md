@@ -91,6 +91,8 @@ python strategy_manager.py
 
 ## Important Considerations
 
+DONT USE TALIB! JUST USE CANDELS TO MAKE A STRATEGY!
+
 ### Strategy Naming
 - Optimized strategies follow pattern: `ClassicStrategy_optimized_MMDD_HHMM.py`
 - Backup files: `StrategyName_backup_YYMMDD_HHMMSS.py`
