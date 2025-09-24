@@ -252,6 +252,11 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
     echo "  - Examples: ft01.subx.fun, trading.mydomain.com"
     read -p "Enter host domain (or press Enter for localhost): " FREQTRADE_HOST
 
+    # Normalize accidental 'N'/'n' answers (from non-interactive runs) to empty
+    if [ "$FREQTRADE_HOST" = "N" ] || [ "$FREQTRADE_HOST" = "n" ]; then
+        FREQTRADE_HOST=""
+    fi
+
     if [ -n "$FREQTRADE_HOST" ]; then
         info "✅ Production mode: Using domain $FREQTRADE_HOST"
         # Update docker-compose.yml with custom domain
@@ -451,7 +456,7 @@ if [ "$DEPLOY_MODE" = "app" ] && [ -n "$FREQTRADE_API_URL" ]; then
 elif [ "$FREQTRADE_HOST" != "localhost" ] && [ -n "$FREQTRADE_HOST" ]; then
   API_TEST_URL="https://${FREQTRADE_HOST}"
 else
-  API_TEST_URL="http://localhost:6678"
+  API_TEST_URL="http://localhost:6677"
 fi
 
 info "📡 Using API URL: $API_TEST_URL"
@@ -507,7 +512,7 @@ success "🎉 Deployment completed!"
 echo ""
 info "🚀 Deploy Mode: ${DEPLOY_MODE_DISPLAY:-Development (localhost)}"
 echo ""
-echo "  - Freqtrade API: http://localhost:6678"
+echo "  - Freqtrade API: http://localhost:6677"
 echo ""
 info "🐳 Docker Network URLs (for production):"
 echo "  - Freqtrade API: http://freqtrade-bot01:8080"
@@ -518,8 +523,8 @@ if [ "$FREQTRADE_HOST" != "localhost" ] && [ -n "$FREQTRADE_HOST" ]; then
   echo "  - Freqtrade API: https://${FREQTRADE_HOST}"
   echo "  - Freqtrade UI: https://${FREQTRADE_HOST}"
 else
-  echo "  - Freqtrade API: http://localhost:6678 (development mode)"
-  echo "  - Freqtrade UI: http://localhost:6678 (development mode)"
+  echo "  - Freqtrade API: http://localhost:6677 (development mode)"
+  echo "  - Freqtrade UI: http://localhost:6677 (development mode)"
 fi
 echo ""
 info "🔐 Security Information:"

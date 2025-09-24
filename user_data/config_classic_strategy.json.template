@@ -2,9 +2,9 @@
   "bot_name": "classic-bot",
   "strategy": "ClassicStrategy",
   "dry_run": true,
-  "timeframe": "3m",
+  "timeframe": "5m",
   "startup_candle_count": 30,
-  "max_open_trades": 3,
+  "max_open_trades": 5,
   "stake_currency": "USDT",
   "stake_amount": 100,
   "tradable_balance_ratio": 0.99,
@@ -30,8 +30,9 @@
     "BTC/USDT",
     "ETH/USDT",
     "SOL/USDT",
-    "XRP/USDT",
-    "ADA/USDT"
+    "DOGE/USDT",
+    "AVAX/USDT",
+    "XRP/USDT"
   ],
   "unfilledtimeout": {
     "entry": 10,
@@ -45,7 +46,9 @@
   "exit_pricing": {
     "price_side": "same",
     "use_order_book": false,
-    "order_book_top": 1
+    "order_book_top": 1,
+    "exit_on_roi": true,
+    "exit_on_stoploss": false
   },
   "api_server": {
     "enabled": true,
@@ -59,9 +62,7 @@
     ],
     "CORS_origins": [
       "http://localhost:3000",
-      "http://localhost:14251",
-      "https://ui01.subx.fun",
-      "https://ftui.subx.fun"
+      "http://localhost:14251"
     ]
   },
   "strategy_path": "/freqtrade/user_data/strategies"

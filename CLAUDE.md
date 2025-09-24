@@ -100,7 +100,7 @@ DONT USE TALIB! JUST USE CANDELS TO MAKE A STRATEGY!
 
 ### Container Management
 - Check running container status before operations
-- Freqtrade container exposes API on port 8080 (mapped to 6678)
+- Freqtrade container exposes API on port 8080 (mapped to 6677)
 - Container restart policies for production deployment
 
 ### Market Data

@@ -18,24 +18,20 @@ class ClassicStrategy(IStrategy):
 
     # 基本设置
     INTERFACE_VERSION = 3
-    # 与默认配置保持一致
-    timeframe = "3m"
+    # 使用配置文件中的时间框架
+    timeframe = "5m"
 
-    def __init__(self, config: dict):
-        super().__init__(config)
-        # 固定策略 timeframe 为 3m（不受外部配置覆盖）
-        self.timeframe = "3m"
-
-    # 设定极高 ROI，避免 ROI 提前退出；关闭基于信号的退出，由 custom_exit 控制
+    # 设定 ROI 实现5根K线强制退出
     minimal_roi = {
-        "0": 1000  # 形同禁用 ROI（要求 100000% 才离场）
+        "0": 0.10,    # 初始目标收益 10%
+        "25": -1      # 第5根K线强制退出（5根K线 × 5分钟 = 25分钟）
     }
 
     # 止损（可按需调整）
     stoploss = -0.05
 
     # 交易参数
-    startup_candle_count: int = 20  # 更快开始评估（8震荡+2阳线 + 缓冲）
+    startup_candle_count: int = 30  # 适应20根K线平衡条件 + 8震荡+2阴线 + 缓冲
     process_only_new_candles = True
     use_exit_signal = False         # 不使用 populate_exit_trend 的退出
     exit_profit_only = False
@@ -137,72 +133,102 @@ class ClassicStrategy(IStrategy):
         
         return result
 
+    def _check_8sideways_2bears_pattern(self, dataframe: pd.DataFrame) -> pd.Series:
+        """
+        8震荡+2连阴模式：
+        - i 为当前K线，i-1 和 i 必须为连续2根阴线
+        - i-9 到 i-2 为8根震荡段
+        - 条件1：8震荡中最长实体 < 2连阴中最短实体
+        - 条件2：第2根阴线长度(i) > 第1根阴线长度(i-1) （递增）
+        """
+        result = pd.Series(False, index=dataframe.index)
+        if len(dataframe) < 10:  # 需要至少10根K线
+            return result
+
+        bears = ~dataframe["is_bullish"]  # 阴线标记
+        bodies = dataframe["candle_body"]
+
+        for i in range(9, len(dataframe)):  # 从第10根开始检查
+            # 检查最近2根是否为阴线
+            if not (bears.iloc[i] and bears.iloc[i - 1]):
+                continue
+
+            # 8震荡段：i-9 到 i-2
+            side_start = i - 9
+            side_end = i - 2
+            side_bodies = bodies.iloc[side_start : side_end + 1]
+            
+            # 2连阴段：i-1 和 i
+            bear1_body = bodies.iloc[i - 1]  # 第1根阴线
+            bear2_body = bodies.iloc[i]      # 第2根阴线
+            
+            if len(side_bodies) != 8:
+                continue
+
+            # 条件1：8震荡中最长实体 < 2连阴中最短实体
+            max_side_body = float(side_bodies.max())
+            min_bear_body = float(min(bear1_body, bear2_body))
+            cond1 = max_side_body < min_bear_body
+
+            # 条件2：第2根阴线长度 > 第1根阴线长度（递增）
+            cond2 = float(bear2_body) > float(bear1_body)
+
+            result.iloc[i] = bool(cond1 and cond2)
+        
+        return result
+
+    def _check_20k_balanced_pattern(self, dataframe: pd.DataFrame) -> pd.Series:
+        """
+        近20根K线10阳10阴平衡条件：
+        - 近20根K线中正好有10根阳线和10根阴线
+        """
+        result = pd.Series(False, index=dataframe.index)
+        if len(dataframe) < 20:  # 需要至少20根K线
+            return result
+
+        bulls = dataframe["is_bullish"]   # 阳线标记
+
+        for i in range(19, len(dataframe)):  # 从第20根开始检查
+            # 近20根K线：i-19 到 i
+            recent_20_start = i - 19
+            recent_20_bulls = bulls.iloc[recent_20_start : i + 1]
+            bull_count = int(recent_20_bulls.sum())
+            bear_count = 20 - bull_count
+            
+            # 条件：正好10阳10阴
+            result.iloc[i] = (bull_count == 10 and bear_count == 10)
+        
+        return result
+
     # ---------------------- 入场/出场 ----------------------
     def populate_entry_trend(self, dataframe: pd.DataFrame, metadata: dict) -> pd.DataFrame:
         # 基础过滤：仅确保有成交量
         basic_conditions = dataframe["volume"].fillna(0) > 0
 
-        # 新逻辑：8震荡+2连阳，更容易触发
-        pattern_signal = self._check_8sideways_2bulls_pattern(dataframe)
+        # 条件A：8震荡+2连阴模式
+        pattern_signal_A = self._check_8sideways_2bears_pattern(dataframe)
+        
+        # 条件B：近20根K线10阳10阴平衡条件
+        pattern_signal_B = self._check_20k_balanced_pattern(dataframe)
 
-        entry = basic_conditions & pattern_signal
+        # 两个条件任一满足即可入场（OR关系）
+        entry_A = basic_conditions & pattern_signal_A
+        entry_B = basic_conditions & pattern_signal_B
 
         # 使用接口v3标准信号：enter_long（适用于现货/合约的多头进入）
-        dataframe.loc[entry, "enter_long"] = 1
-        # 标记进入原因，便于调试（v3 对应 enter_tag）
-        dataframe.loc[entry, "enter_tag"] = "8sideways_2bulls_enhanced"
+        dataframe.loc[entry_A, "enter_long"] = 1
+        dataframe.loc[entry_A, "enter_tag"] = "8sideways_2bears"
+        
+        dataframe.loc[entry_B, "enter_long"] = 1  
+        dataframe.loc[entry_B, "enter_tag"] = "20k_balanced"
+        
         return dataframe
 
     def populate_exit_trend(self, dataframe: pd.DataFrame, metadata: dict) -> pd.DataFrame:
         # 不使用基于信号的退出（use_exit_signal=False），这里留空
         return dataframe
 
-    # ---------------------- 自定义 10 根 K 线强制退出 ----------------------
-    def custom_exit(self, pair: str, trade, current_time, current_rate, current_profit, **kwargs) -> Optional[str]:
-        # 使用 trade.open_date（而不是 open_date_utc）
-        entry_time = getattr(trade, 'open_date_utc', None) or getattr(trade, 'open_date', None)
-        
-        if entry_time is None:
-            return "no_entry_time_exit"
-            
-        candles_held = self._candles_held(entry_time, current_time)
-        
-        # 10根K线强制退出
-        if candles_held >= 10:
-            return "10_candles_exit"
-            
-        return None
-
-    # ---------------------- 工具方法 ----------------------
-    def _candles_held(self, entry_time, current_time) -> int:
-        """根据策略 timeframe 计算已持有的 K 线数量。"""
-        tf_seconds = self._timeframe_to_seconds(self.timeframe)
-        held_seconds = (current_time - entry_time).total_seconds()
-        if tf_seconds <= 0:
-            return 0
-        return int(held_seconds // tf_seconds)
-
-    @staticmethod
-    def _timeframe_to_seconds(tf: str) -> int:
-        """将 '5m' / '1h' / '1d' 等转换为秒数。"""
-        if not tf or not isinstance(tf, str):
-            return 0
-        tf = tf.strip().lower()
-        unit = tf[-1]
-        try:
-            value = int(tf[:-1])
-        except Exception:
-            return 0
-        if unit == "m":
-            return value * 60
-        if unit == "h":
-            return value * 60 * 60
-        if unit == "d":
-            return value * 24 * 60 * 60
-        # 未知单位
-        return 0
-
-    # ---- 技术指标：RSI（简单实现）----
+    # ---------------------- 技术指标：RSI（简单实现）----
     @staticmethod
     def _rsi(series: pd.Series, period: int = 14) -> pd.Series:
         series = series.astype(float)
@@ -215,3 +241,4 @@ class ClassicStrategy(IStrategy):
         rs = avg_gain / avg_loss.replace(0, 1e-10)
         rsi = 100 - (100 / (1 + rs))
         return rsi
+
