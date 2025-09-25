@@ -1,12 +1,8 @@
-# 单独部署 Freqtrade
-# 使用方法: docker-compose -f docker-compose.freqtrade.yml up -d
-
 services:
   freqtrade:
     image: freqtradeorg/freqtrade:stable
     container_name: freqtrade-bot01
     restart: unless-stopped
-    network_mode: host
     volumes:
       - ./user_data:/freqtrade/user_data
     command: >
@@ -17,23 +13,22 @@ services:
       - FREQTRADE__API_SERVER__ENABLED=true
       - FREQTRADE__API_SERVER__LISTEN_IP_ADDRESS=0.0.0.0
       - FREQTRADE__API_SERVER__LISTEN_PORT=8080
+      # Pairlist now configured in JSON only to avoid env merge conflicts
       # Proxy settings (configured via .env file)
-      - HTTP_PROXY=http://127.0.0.1:7890
-      - HTTPS_PROXY=http://127.0.0.1:7890
+      - HTTP_PROXY=${PROXY_URL}
+      - HTTPS_PROXY=${PROXY_URL}
       - NO_PROXY=localhost,127.0.0.1
-    # ports not needed with host network mode
-    # ports:
-    #   - "6677:8080"
+    ports:
+      - "6677:8080"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.freqtrade.rule=Host(`localhost`)"
       - "traefik.http.routers.freqtrade.entrypoints=websecure"
       - "traefik.http.routers.freqtrade.tls.certresolver=letsencrypt"
       - "traefik.http.services.freqtrade.loadbalancer.server.port=8080"
-    # networks not compatible with host mode
-    # networks:
-    #   - traefik
-    #   - default
+    networks:
+      - traefik
+      - default
 
 networks:
   traefik:

@@ -25,14 +25,13 @@
   },
   "pairlists": [
     {
-      "method": "StaticPairList"
+      "method": "VolumePairList",
+      "number_assets": 20,
+      "sort_key": "quoteVolume",
+      "min_value": 1000000
     }
   ],
-  "pair_whitelist": [
-    "BTC/USDT",
-    "ETH/USDT",
-    "BNB/USDT"
-  ],
+  "pair_whitelist": [],
   "pair_blacklist": [],
   "unfilledtimeout": {
     "entry": 10,

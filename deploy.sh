@@ -42,30 +42,9 @@ generate_api_credentials() {
     echo "  WebSocket Token: ${WS_TOKEN}"
 }
 
-# Deployment mode selection
-DEPLOY_MODE=${1:-"all"}
-
-case "$DEPLOY_MODE" in
-  "all")
-    COMPOSE_FILE="docker-compose.yml"
-    info "🚀 Starting full deployment (crypto-trader + freqtrade)..."
-    ;;
-  "app")
-    COMPOSE_FILE="docker-compose.app.yml"
-    info "🚀 Starting crypto-trader only deployment..."
-    ;;
-  "freqtrade")
-    COMPOSE_FILE="docker-compose.yml"
-    info "🚀 Starting freqtrade only deployment..."
-    ;;
-  *)
-    error "❌ Invalid deployment mode. Usage:"
-    echo "  ./deploy.sh all         # Deploy both services (default)"
-    echo "  ./deploy.sh app         # Deploy crypto-trader only"
-    echo "  ./deploy.sh freqtrade   # Deploy freqtrade only"
-    exit 1
-    ;;
-esac
+# Single-service deployment: freqtrade only (no modes)
+COMPOSE_FILE="docker-compose.yml"
+info "🚀 Starting freqtrade deployment..."
 
 # Create necessary directories
 info "📁 Creating directories..."
@@ -283,23 +262,7 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
         info "✅ Using newly generated secure credentials"
     fi
 
-    # Get Freqtrade API URL for app-only deployment
-    if [ "$DEPLOY_MODE" = "app" ]; then
-        echo ""
-        info "🔗 Classic Freqtrade Configuration"
-        echo "Common options:"
-        echo "  - http://host.docker.internal:6677  (if Freqtrade runs on host)"
-        echo "  - http://192.168.1.100:6677         (remote server)"
-        echo "  - https://ft01.subx.fun             (domain name)"
-        read -p "Enter Freqtrade API URL: " FREQTRADE_API_URL_INPUT
-        if [ -n "$FREQTRADE_API_URL_INPUT" ]; then
-            FREQTRADE_API_URL="$FREQTRADE_API_URL_INPUT"
-        else
-            error "❌ Freqtrade API URL is required for app-only deployment"
-            exit 1
-        fi
-        info "✅ Freqtrade API URL set to: $FREQTRADE_API_URL"
-    fi
+    # No app-only mode anymore
 
     # Get HOST configuration
     echo ""
@@ -486,6 +449,16 @@ docker-compose -f $COMPOSE_FILE up -d
 info "⏳ Waiting for services to start..."
 sleep 12
 
+# Dump final freqtrade config (from host bind mount) for debugging
+info "🧾 Final freqtrade config (host): user_data/config_classic_strategy.json"
+if command_exists jq; then
+  jq '.' user_data/config_classic_strategy.json | head -200 || cat user_data/config_classic_strategy.json | head -200
+else
+  cat user_data/config_classic_strategy.json | head -200
+fi
+
+# Pairlists 仅由 JSON 配置提供，避免 env 深合并冲突
+
 # Check service status
 success "✅ Checking service status..."
 docker-compose -f $COMPOSE_FILE ps
@@ -497,9 +470,7 @@ restore_database
 info "🔍 Testing Freqtrade API connectivity..."
 
 # Determine API URL based on deployment mode
-if [ "$DEPLOY_MODE" = "app" ] && [ -n "$FREQTRADE_API_URL" ]; then
-  API_TEST_URL="$FREQTRADE_API_URL"
-elif [ "$FREQTRADE_HOST" != "localhost" ] && [ -n "$FREQTRADE_HOST" ]; then
+if [ "$FREQTRADE_HOST" != "localhost" ] && [ -n "$FREQTRADE_HOST" ]; then
   API_TEST_URL="https://${FREQTRADE_HOST}"
 else
   API_TEST_URL="http://localhost:6677"
