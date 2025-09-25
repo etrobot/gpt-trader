@@ -42,6 +42,7 @@
     "AVAX/USDT",
     "XRP/USDT"
   ],
+  "pair_blacklist": [],
   "unfilledtimeout": {
     "entry": 10,
     "exit": 30
