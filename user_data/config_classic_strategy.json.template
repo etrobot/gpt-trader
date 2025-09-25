@@ -16,11 +16,19 @@
     "secret": "YOUR_API_SECRET_HERE",
     "ccxt_config": {
       "enableRateLimit": true,
-      "rateLimit": 100
+      "rateLimit": 100,
+      "proxies": {
+        "http": "${PROXY_URL}",
+        "https": "${PROXY_URL}"
+      }
     },
     "ccxt_async_config": {
       "enableRateLimit": true,
-      "rateLimit": 100
+      "rateLimit": 100,
+      "proxies": {
+        "http": "${PROXY_URL}",
+        "https": "${PROXY_URL}"
+      }
     }
   },
   "pairlists": [

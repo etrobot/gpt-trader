@@ -86,6 +86,17 @@ if [ ! -f "user_data/config_classic_strategy.json" ]; then
   if [ -f "user_data/config_classic_strategy.json.template" ]; then
     cp user_data/config_classic_strategy.json.template user_data/config_classic_strategy.json
     success "✅ 已从模板创建 user_data/config_classic_strategy.json"
+    
+    # Replace template placeholders immediately after creation
+    info "🔧 Replacing template placeholders..."
+    sed -i.bak 's/"\${PROXY_URL}"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+    sed -i.bak 's/"YOUR_USERNAME_HERE"/"admin"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+    sed -i.bak 's/"YOUR_PASSWORD_HERE"/"password"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+    sed -i.bak 's/"YOUR_JWT_SECRET_HERE"/"temp_secret"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+    sed -i.bak 's/"YOUR_WS_TOKEN_HERE"/"temp_token"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+    sed -i.bak 's/"YOUR_API_KEY_HERE"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+    sed -i.bak 's/"YOUR_API_SECRET_HERE"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+    success "✅ Template placeholders replaced"
   else
     error "❌ 缺少配置文件与模板，请先提供 user_data/config_classic_strategy.json 或 user_data/config_classic_strategy.json.template"
     exit 1
@@ -145,9 +156,43 @@ else
         FREQTRADE_PASSWORD=$(grep "^FREQTRADE_API_PASSWORD=" .env | cut -d'=' -f2)
         JWT_SECRET=$(grep "^JWT_SECRET_KEY=" .env | cut -d'=' -f2)
         WS_TOKEN=$(grep "^WS_TOKEN=" .env | cut -d'=' -f2)
-        success "✅ Loaded existing credentials from .env"
+        PROXY_URL=$(grep "^PROXY_URL=" .env | cut -d'=' -f2)
+        success "✅ Loaded existing credentials and proxy settings from .env"
     fi
 fi
+
+# Function to update Freqtrade config with proxy settings
+update_proxy_config() {
+    local proxy_url="$1"
+    if [ -f "user_data/config_classic_strategy.json" ] && command_exists jq; then
+        info "🔧 Updating Freqtrade config with proxy settings..."
+        
+        if [ -n "$proxy_url" ] && [ "$proxy_url" != "" ]; then
+            # Set proxy configuration
+            jq --arg proxy_url "$proxy_url" \
+               '.exchange.ccxt_config.proxies = {
+                  "http": $proxy_url,
+                  "https": $proxy_url
+                } |
+                .exchange.ccxt_async_config.proxies = {
+                  "http": $proxy_url,
+                  "https": $proxy_url
+                }' \
+               user_data/config_classic_strategy.json > user_data/config_temp.json && \
+            mv user_data/config_temp.json user_data/config_classic_strategy.json
+            success "✅ Applied proxy settings: $proxy_url"
+        else
+            # Remove proxy configuration or set to null
+            jq 'del(.exchange.ccxt_config.proxies) | del(.exchange.ccxt_async_config.proxies)' \
+               user_data/config_classic_strategy.json > user_data/config_temp.json && \
+            mv user_data/config_temp.json user_data/config_classic_strategy.json
+            success "✅ Removed proxy settings"
+        fi
+        
+        # Also replace template placeholders if they exist
+        sed -i.bak 's/\${PROXY_URL}//g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+    fi
+}
 
 # Update Freqtrade config with credentials (either new or existing)
 if [ -f "user_data/config_classic_strategy.json" ] && [ -n "$FREQTRADE_USERNAME" ]; then
@@ -173,6 +218,9 @@ if [ -f "user_data/config_classic_strategy.json" ] && [ -n "$FREQTRADE_USERNAME"
            user_data/config_classic_strategy.json > user_data/config_temp.json && \
         mv user_data/config_temp.json user_data/config_classic_strategy.json
         success "✅ Updated Freqtrade config with credentials"
+        
+        # Apply proxy settings if available
+        update_proxy_config "$PROXY_URL"
     else
         warn "⚠️  jq not available - please manually update API credentials in user_data/config_classic_strategy.json"
     fi
@@ -220,6 +268,9 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
                user_data/config_classic_strategy.json > user_data/config_temp.json && \
             mv user_data/config_temp.json user_data/config_classic_strategy.json
             success "✅ Updated Freqtrade config with manually entered credentials"
+            
+            # Apply proxy settings if available
+            update_proxy_config "$PROXY_URL"
         fi
     else
         info "✅ Using newly generated secure credentials"
@@ -323,27 +374,15 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
             fi
 
             # Update Freqtrade config with proxy settings
-            if [ -f "user_data/config_classic_strategy.json" ] && command_exists jq; then
-                info "🔧 Adding proxy settings to Freqtrade config..."
-                jq --arg proxy_url "$PROXY_URL" \
-                   '.exchange.ccxt_config.proxies = {
-                      "http": $proxy_url,
-                      "https": $proxy_url
-                    } |
-                    .exchange.ccxt_async_config.proxies = {
-                      "http": $proxy_url,
-                      "https": $proxy_url
-                    }' \
-                   user_data/config_classic_strategy.json > user_data/config_temp.json && \
-                mv user_data/config_temp.json user_data/config_classic_strategy.json
-                success "✅ Added proxy settings to Freqtrade config"
-            fi
+            update_proxy_config "$PROXY_URL"
             success "✅ Proxy configured: ${PROXY_URL}"
         else
             warn "⚠️  No proxy URL provided, skipping proxy configuration"
         fi
     else
         info "ℹ️  No proxy configured"
+        # Ensure no proxy settings are applied
+        update_proxy_config ""
     fi
 
     info "📝 Creating .env file with credentials..."
