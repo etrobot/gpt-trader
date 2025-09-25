@@ -1,10 +1,10 @@
 {
   "bot_name": "classic-bot",
-  "strategy": "ClassicStrategy",
+  "strategy": "classic_strategy",
   "dry_run": true,
   "timeframe": "5m",
-  "startup_candle_count": 30,
-  "max_open_trades": 5,
+  "startup_candle_count": 50,
+  "max_open_trades": 3,
   "stake_currency": "USDT",
   "stake_amount": 100,
   "tradable_balance_ratio": 0.99,
@@ -12,35 +12,26 @@
   "force_entry_enable": true,
   "exchange": {
     "name": "okx",
-    "key": "YOUR_API_KEY_HERE",
-    "secret": "YOUR_API_SECRET_HERE",
+    "key": "",
+    "secret": "",
     "ccxt_config": {
       "enableRateLimit": true,
-      "rateLimit": 100,
-      "proxies": {
-        "http": "${PROXY_URL}",
-        "https": "${PROXY_URL}"
-      }
+      "rateLimit": 100
     },
     "ccxt_async_config": {
       "enableRateLimit": true,
-      "rateLimit": 100,
-      "proxies": {
-        "http": "${PROXY_URL}",
-        "https": "${PROXY_URL}"
-      }
+      "rateLimit": 100
     }
   },
   "pairlists": [
-    { "method": "StaticPairList" }
+    {
+      "method": "StaticPairList"
+    }
   ],
   "pair_whitelist": [
     "BTC/USDT",
     "ETH/USDT",
-    "SOL/USDT",
-    "DOGE/USDT",
-    "AVAX/USDT",
-    "XRP/USDT"
+    "BNB/USDT"
   ],
   "pair_blacklist": [],
   "unfilledtimeout": {
@@ -55,19 +46,17 @@
   "exit_pricing": {
     "price_side": "same",
     "use_order_book": false,
-    "order_book_top": 1,
-    "exit_on_roi": true,
-    "exit_on_stoploss": false
+    "order_book_top": 1
   },
   "api_server": {
     "enabled": true,
     "listen_ip_address": "0.0.0.0",
     "listen_port": 8080,
-    "username": "YOUR_USERNAME_HERE",
-    "password": "YOUR_PASSWORD_HERE",
-    "jwt_secret_key": "YOUR_JWT_SECRET_HERE",
+    "username": "admin_isfiz4zO",
+    "password": "oqQfElIbuBVNy2L0Gw73Sn3a",
+    "jwt_secret_key": "R4evarisfPPX83T6qve1jJO4Iw8f05CsavKqZQg4T4UN6v7cNgHwkrHZI0kQhB",
     "ws_token": [
-      "YOUR_WS_TOKEN_HERE"
+      "M3MDosRr9QQZUAh2TgK9krh7h5V9zc83"
     ],
     "CORS_origins": [
       "http://localhost:3000",

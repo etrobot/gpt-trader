@@ -1,16 +1,6 @@
 # ============ FREQTRADE 敏感信息保护 ============
-# 配置文件 - 包含API密钥、用户名密码等
-user_data/config_classic_strategy.json
-user_data/config*.json
-!user_data/*.json.template
-!user_data/*.json.example
-
-# 交易数据和日志
-user_data/logs/
-user_data/backtest_results/
-user_data/plot/
-user_data/tradesv3*.sqlite
-user_data/dry_run.json
+# 整个 user_data 目录 - 包含配置文件、策略、交易数据等敏感信息
+user_data/
 
 # 环境变量和凭证
 .env
@@ -337,10 +327,7 @@ cython_debug/
 /App/static/
 App/debug_output/
 data/
-user_data/config_classic_strategy.json.backup.*
-user_data/config_classic_strategy.json
-user_data/config_okx.json
-user_data/config_classic_strategy.json
+user_data
 
 # 策略回测系统特定文件
 results/

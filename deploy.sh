@@ -71,36 +71,43 @@ esac
 info "📁 Creating directories..."
 mkdir -p data
 
-# Ensure Freqtrade user_data directory and config exist
-mkdir -p user_data user_data/strategies
+# Ensure Freqtrade user_data directory exists, create from template if missing
+if [ ! -d "user_data" ]; then
+  if [ -d "user_data_template" ]; then
+    info "📁 Creating user_data from template..."
+    cp -r user_data_template user_data
+    success "✅ Created user_data directory from user_data_template"
+    
+    # Replace template placeholders immediately after creation
+    if [ -f "user_data/config_classic_strategy.json" ]; then
+      info "🔧 Replacing template placeholders..."
+      sed -i.bak 's/"\${PROXY_URL}"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+      sed -i.bak 's/"YOUR_USERNAME_HERE"/"admin"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+      sed -i.bak 's/"YOUR_PASSWORD_HERE"/"password"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+      sed -i.bak 's/"YOUR_JWT_SECRET_HERE"/"temp_secret"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+      sed -i.bak 's/"YOUR_WS_TOKEN_HERE"/"temp_token"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+      sed -i.bak 's/"YOUR_API_KEY_HERE"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+      sed -i.bak 's/"YOUR_API_SECRET_HERE"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+      success "✅ Template placeholders replaced"
+    fi
+  else
+    error "❌ 缺少 user_data_template 目录，无法创建 user_data"
+    exit 1
+  fi
+else
+  info "ℹ️  user_data directory already exists"
+fi
+
 # Check required files exist
-if [ ! -f "user_data/strategies/classic_strategy.py" ] && [ ! -f "user_data/strategies/classic_strategy.py" ]; then
-  error "❌ Missing trading strategy files"
-  error "❌ Please create 'user_data/strategies/classic_strategy.py' or 'user_data/strategies/classic_strategy.py' before deployment"
+if [ ! -f "user_data/strategies/classic_strategy.py" ]; then
+  error "❌ Missing trading strategy file: user_data/strategies/classic_strategy.py"
   exit 1
 fi
 
-# Check if config file exists first; if missing, try to create from template
+# Check if config file exists
 if [ ! -f "user_data/config_classic_strategy.json" ]; then
-  warn "⚠️  未找到 user_data/config_classic_strategy.json，尝试从模板创建..."
-  if [ -f "user_data/config_classic_strategy.json.template" ]; then
-    cp user_data/config_classic_strategy.json.template user_data/config_classic_strategy.json
-    success "✅ 已从模板创建 user_data/config_classic_strategy.json"
-    
-    # Replace template placeholders immediately after creation
-    info "🔧 Replacing template placeholders..."
-    sed -i.bak 's/"\${PROXY_URL}"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-    sed -i.bak 's/"YOUR_USERNAME_HERE"/"admin"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-    sed -i.bak 's/"YOUR_PASSWORD_HERE"/"password"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-    sed -i.bak 's/"YOUR_JWT_SECRET_HERE"/"temp_secret"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-    sed -i.bak 's/"YOUR_WS_TOKEN_HERE"/"temp_token"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-    sed -i.bak 's/"YOUR_API_KEY_HERE"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-    sed -i.bak 's/"YOUR_API_SECRET_HERE"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-    success "✅ Template placeholders replaced"
-  else
-    error "❌ 缺少配置文件与模板，请先提供 user_data/config_classic_strategy.json 或 user_data/config_classic_strategy.json.template"
-    exit 1
-  fi
+  error "❌ Missing config file: user_data/config_classic_strategy.json"
+  exit 1
 fi
 
 # Check if .env file already exists first
