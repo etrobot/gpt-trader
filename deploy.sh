@@ -36,7 +36,10 @@ check_or_generate_credentials() {
     FREQTRADE_PASSWORD=$(grep "^FREQTRADE_API_PASSWORD=" .env | cut -d'=' -f2)
     JWT_SECRET=$(grep "^JWT_SECRET_KEY=" .env | cut -d'=' -f2)
     WS_TOKEN=$(grep "^WS_TOKEN=" .env | cut -d'=' -f2)
-    FREQTRADE_HOST=$(grep "^FREQTRADE_HOST=" .env | cut -d'=' -f2 || echo "localhost")
+    FREQTRADE_HOST=$(grep "^FREQTRADE_HOST=" .env 2>/dev/null | cut -d'=' -f2)
+    if [ -z "$FREQTRADE_HOST" ]; then
+        FREQTRADE_HOST="freq.subx.fun"
+    fi
     PROXY_URL=$(grep "^PROXY_URL=" .env | cut -d'=' -f2 || echo "")
     
     success "✅ Loaded credentials from .env file"
@@ -167,6 +170,18 @@ else
     DEPLOY_MODE_DISPLAY="Development (localhost)"
     FREQTRADE_HOST="localhost"
     HOST_RULE="Host(\`localhost\`)"
+fi
+
+# Ensure FREQTRADE_HOST is persisted in .env file
+if [ -f ".env" ]; then
+    if grep -q "^FREQTRADE_HOST=" .env; then
+        # Update existing FREQTRADE_HOST line
+        sed -i.bak "s/^FREQTRADE_HOST=.*/FREQTRADE_HOST=${FREQTRADE_HOST}/" .env && rm -f .env.bak
+    else
+        # Add FREQTRADE_HOST to .env file if it doesn't exist
+        echo "FREQTRADE_HOST=${FREQTRADE_HOST}" >> .env
+    fi
+    info "🔧 Updated FREQTRADE_HOST in .env file: ${FREQTRADE_HOST}"
 fi
 
 # Generate docker-compose.yml

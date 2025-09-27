@@ -170,10 +170,11 @@ main() {
     echo ""
     info "🌐 Host Configuration"
     echo "Configure the domain/host for Freqtrade access:"
-    echo "  - Leave empty: Use localhost (development mode)"
+    echo "  - Leave empty: Use freq.subx.fun (default)"
     echo "  - Enter domain: Use custom domain with Traefik (production mode)"
+    echo "  - Enter 'localhost': Use localhost (development mode)"
     echo "  - Examples: ft01.subx.fun, trading.mydomain.com"
-    read -p "Enter host domain (or press Enter for localhost): " FREQTRADE_HOST
+    read -p "Enter host domain (or press Enter for freq.subx.fun): " FREQTRADE_HOST
 
     # Normalize accidental 'N'/'n' answers to empty
     if [ "$FREQTRADE_HOST" = "N" ] || [ "$FREQTRADE_HOST" = "n" ]; then
@@ -184,9 +185,9 @@ main() {
         info "✅ Production mode: Using domain $FREQTRADE_HOST"
         DEPLOY_MODE_DISPLAY="Production (with domain)"
     else
-        info "✅ Development mode: Using localhost"
-        DEPLOY_MODE_DISPLAY="Development (localhost)"
-        FREQTRADE_HOST="localhost"
+        info "✅ Using default domain: freq.subx.fun"
+        DEPLOY_MODE_DISPLAY="Production (with domain)"
+        FREQTRADE_HOST="freq.subx.fun"
     fi
 
     # Get proxy configuration
