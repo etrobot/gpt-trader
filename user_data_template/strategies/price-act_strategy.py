@@ -310,11 +310,12 @@ class PriceActionStrategy(IStrategy):
     def _breakout_entry_strategy(self, dataframe: pd.DataFrame) -> pd.Series:
         """
         突破入场策略
-        
+
         组合条件：
         1. 趋势为上升 (trend_direction == 1)
-        2. 波幅增强 (amplitude_enhanced == True)  
+        2. 波幅增强 (amplitude_enhanced == True)
         3. 最后N根K线为阳线（N由breakout_bull_candles配置）
+        4. 最后一根的body_length不是最长的
         """
         result = pd.Series(False, index=dataframe.index)
         
@@ -332,10 +333,13 @@ class PriceActionStrategy(IStrategy):
         for i in range(1, self.breakout_bull_candles):
             bull_conditions = bull_conditions & dataframe['is_bullish'].shift(i)
         last_n_bulls = bull_conditions
-        
+
+        # 条件4：最后一根的body_length不是最长的
+        not_longest_body = dataframe['body_length'] < dataframe['body_length'].rolling(self.breakout_bull_candles).max()
+
         # 组合策略条件
-        result = uptrend & amp_enhanced & last_n_bulls
-        
+        result = uptrend & amp_enhanced & last_n_bulls & not_longest_body
+
         return result
 
     def _rebound_entry_strategy(self, dataframe: pd.DataFrame) -> pd.Series:

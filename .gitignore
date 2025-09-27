@@ -336,3 +336,4 @@ tmp_rovodev_*
 demo_results/
 test_results/
 *.log
+docker-compose.yml

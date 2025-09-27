@@ -6,6 +6,7 @@
   "fiat_display_currency": "USD",
   "timeframe": "5m",
   "dry_run": true,
+  "strategy": "PriceActionStrategy",
   "exchange": {
     "name": "okx",
     "key": "${OKX_API_KEY}",

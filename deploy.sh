@@ -339,11 +339,7 @@ restore_database
 info "🔍 Testing Freqtrade API connectivity..."
 
 # Determine API URL based on deployment mode
-if [ "$FREQTRADE_HOST" != "localhost" ] && [ -n "$FREQTRADE_HOST" ]; then
-  API_TEST_URL="https://${FREQTRADE_HOST}"
-else
-  API_TEST_URL="http://localhost:6677"
-fi
+API_TEST_URL="http://localhost:6677"
 
 info "📡 Using API URL: $API_TEST_URL"
 
