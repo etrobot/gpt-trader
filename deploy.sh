@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Deployment script for Quant Dashboard
+# Deployment script for Freqtrade
+# Prerequisites: .env file must exist (run ./generate_credentials.sh first)
 set -e
 
 command_exists() { command -v "$1" >/dev/null 2>&1; }
@@ -10,36 +11,35 @@ success() { echo -e "\033[0;32m$1\033[0m"; }
 warn() { echo -e "\033[1;33m$1\033[0m"; }
 error() { echo -e "\033[0;31m$1\033[0m"; }
 
-# Function to generate secure random string
-generate_secure_key() {
-    local length=${1:-32}
-    openssl rand -base64 $length | tr -d "=+/" | cut -c1-$length
-}
-
-# Function to generate API credentials
-generate_api_credentials() {
-    info "🔐 Generating secure API credentials..."
-
-    # Generate secure credentials
-    FREQTRADE_USERNAME="admin_$(generate_secure_key 8)"
-    FREQTRADE_PASSWORD=$(generate_secure_key 24)
-    JWT_SECRET=$(generate_secure_key 64)
-    WS_TOKEN=$(generate_secure_key 32)
-
-    # Generate exchange API keys placeholders (only needed for live trading)
-    OKX_API_KEY="DEMO_API_KEY_FOR_DRY_RUN"
-    OKX_SECRET="DEMO_SECRET_FOR_DRY_RUN"
-
-    success "✅ Generated secure credentials"
-    info "ℹ️  Dry-run mode enabled - using demo API keys (safe for testing)"
-    warn "⚠️  For live trading, update OKX API credentials using: ./update_exchange_credentials.sh"
-
-    echo ""
-    info "🔐 Generated Freqtrade Credentials:"
-    echo "  Username: ${FREQTRADE_USERNAME}"
-    echo "  Password: ${FREQTRADE_PASSWORD}"
-    echo "  JWT Secret: ${JWT_SECRET}"
-    echo "  WebSocket Token: ${WS_TOKEN}"
+# Function to check if credentials exist or generate them
+check_or_generate_credentials() {
+    if [ ! -f ".env" ]; then
+        error "❌ No .env file found!"
+        echo ""
+        info "🔐 To generate credentials, run:"
+        echo "  ./generate_credentials.sh"
+        echo ""
+        info "📝 Or create .env file manually with required variables:"
+        echo "  FREQTRADE_API_USERNAME, FREQTRADE_API_PASSWORD, JWT_SECRET_KEY, WS_TOKEN"
+        echo ""
+        exit 1
+    fi
+    
+    # Load credentials from existing .env file
+    info "🔧 Loading credentials from .env file..."
+    if ! grep -q "^FREQTRADE_API_USERNAME=" .env; then
+        error "❌ Missing FREQTRADE_API_USERNAME in .env file"
+        exit 1
+    fi
+    
+    FREQTRADE_USERNAME=$(grep "^FREQTRADE_API_USERNAME=" .env | cut -d'=' -f2)
+    FREQTRADE_PASSWORD=$(grep "^FREQTRADE_API_PASSWORD=" .env | cut -d'=' -f2)
+    JWT_SECRET=$(grep "^JWT_SECRET_KEY=" .env | cut -d'=' -f2)
+    WS_TOKEN=$(grep "^WS_TOKEN=" .env | cut -d'=' -f2)
+    FREQTRADE_HOST=$(grep "^FREQTRADE_HOST=" .env | cut -d'=' -f2 || echo "localhost")
+    PROXY_URL=$(grep "^PROXY_URL=" .env | cut -d'=' -f2 || echo "")
+    
+    success "✅ Loaded credentials from .env file"
 }
 
 # Single-service deployment: freqtrade only (no modes)
@@ -89,63 +89,8 @@ if [ ! -f "user_data/config_price-act_strategy.json" ]; then
   exit 1
 fi
 
-# Check if .env file already exists first
-if [ -f ".env" ]; then
-    echo ""
-    warn "⚠️  .env file already exists!"
-    echo ""
-    info "Current .env file contains:"
-    echo "========================================"
-    cat .env
-    echo "========================================"
-    echo ""
-
-    read -p "Do you want to recreate the .env file with new credentials? (y/N): " RECREATE_ENV
-
-    if [[ ! "$RECREATE_ENV" =~ ^[Yy]$ ]]; then
-        info "ℹ️  Keeping existing .env file. Deployment will continue with current settings."
-        echo ""
-        info "📝 If you need to update credentials later, you can:"
-        echo "  - Run this script again and choose to recreate"
-        # OpenAI credentials no longer required
-        echo "  - Edit .env file manually"
-        echo ""
-
-        # Skip credential input if keeping existing .env
-        SKIP_ENV_CREATION=true
-        SKIP_CREDENTIAL_GENERATION=true
-    else
-        info "💾 Backing up existing .env file..."
-        # Create clean backup name without stacking timestamps
-        BACKUP_NAME=".env.backup.$(date +%Y%m%d_%H%M%S)"
-        cp .env "$BACKUP_NAME"
-        success "✅ Backup created: $BACKUP_NAME"
-        echo ""
-        info "📋 You can copy any values you want to keep from above and paste them when prompted."
-        echo ""
-        SKIP_ENV_CREATION=false
-        SKIP_CREDENTIAL_GENERATION=false
-    fi
-else
-    SKIP_ENV_CREATION=false
-    SKIP_CREDENTIAL_GENERATION=false
-fi
-
-# Generate credentials only if needed
-if [ "$SKIP_CREDENTIAL_GENERATION" != "true" ]; then
-    generate_api_credentials
-else
-    # Read existing credentials from .env file
-    if [ -f ".env" ]; then
-        info "🔧 Reading existing credentials from .env file..."
-        FREQTRADE_USERNAME=$(grep "^FREQTRADE_API_USERNAME=" .env | cut -d'=' -f2)
-        FREQTRADE_PASSWORD=$(grep "^FREQTRADE_API_PASSWORD=" .env | cut -d'=' -f2)
-        JWT_SECRET=$(grep "^JWT_SECRET_KEY=" .env | cut -d'=' -f2)
-        WS_TOKEN=$(grep "^WS_TOKEN=" .env | cut -d'=' -f2)
-        PROXY_URL=$(grep "^PROXY_URL=" .env | cut -d'=' -f2)
-        success "✅ Loaded existing credentials and proxy settings from .env"
-    fi
-fi
+# Check and load credentials
+check_or_generate_credentials
 
 # Function to update Freqtrade config with proxy settings
 update_proxy_config() {
@@ -212,166 +157,75 @@ if [ -f "user_data/config_price-act_strategy.json" ] && [ -n "$FREQTRADE_USERNAM
     fi
 fi
 
-# Get configuration only if we need to create/update .env
-if [ "$SKIP_ENV_CREATION" != "true" ]; then
-    # Ask if user wants to use existing generated credentials
-    echo ""
-    info "🔑 Generated Credentials Configuration"
-    info "The following secure credentials were auto-generated:"
-    echo "  - Freqtrade Username: ${FREQTRADE_USERNAME}"
-    echo "  - Freqtrade Password: ${FREQTRADE_PASSWORD}"
-    echo "  - JWT Secret: ${JWT_SECRET:0:10}..."
-    echo "  - WebSocket Token: ${WS_TOKEN:0:10}..."
-    echo ""
-    read -p "Do you want to use these newly generated credentials? (Y/n): " USE_NEW_CREDS
+# Generate docker-compose.yml based on configuration
+info "🔧 Generating docker-compose.yml..."
 
-    if [[ "$USE_NEW_CREDS" =~ ^[Nn]$ ]]; then
-        echo ""
-        info "📋 Please enter your preferred credentials (or copy from the .env backup shown above):"
-        read -p "Freqtrade Username: " FREQTRADE_USERNAME
-        read -p "Freqtrade Password: " FREQTRADE_PASSWORD
-        read -p "JWT Secret Key: " JWT_SECRET
-        read -p "WebSocket Token: " WS_TOKEN
+if [ -n "$FREQTRADE_HOST" ] && [ "$FREQTRADE_HOST" != "localhost" ]; then
+    DEPLOY_MODE_DISPLAY="Production (with domain)"
+    HOST_RULE="Host(\`${FREQTRADE_HOST}\`)"
+else
+    DEPLOY_MODE_DISPLAY="Development (localhost)"
+    FREQTRADE_HOST="localhost"
+    HOST_RULE="Host(\`localhost\`)"
+fi
 
-        # Update user_data config with manually entered credentials
-        if [ -f "user_data/config_price-act_strategy.json" ] && command_exists jq; then
-            info "🔧 Updating Freqtrade config with manually entered credentials..."
-            # Create clean backup name without stacking timestamps
-            if [ -f "user_data/config_price-act_strategy.json.backup" ]; then
-                rm -f user_data/config_price-act_strategy.json.backup
-            fi
-            cp user_data/config_price-act_strategy.json user_data/config_price-act_strategy.json.backup
-
-            jq --arg username "$FREQTRADE_USERNAME" \
-               --arg password "$FREQTRADE_PASSWORD" \
-               --arg jwt_secret "$JWT_SECRET" \
-               --arg ws_token "$WS_TOKEN" \
-               '.api_server.username = $username |
-                .api_server.password = $password |
-                .api_server.jwt_secret_key = $jwt_secret |
-                .api_server.ws_token = [$ws_token] |
-                .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251"]' \
-               user_data/config_price-act_strategy.json > user_data/config_temp.json && \
-            mv user_data/config_temp.json user_data/config_price-act_strategy.json
-            success "✅ Updated Freqtrade config with manually entered credentials"
-            
-            # Apply proxy settings if available
-            update_proxy_config "$PROXY_URL"
-        fi
-    else
-        info "✅ Using newly generated secure credentials"
-    fi
-
-    # No app-only mode anymore
-
-    # Get HOST configuration
-    echo ""
-    info "🌐 Host Configuration"
-    echo "Configure the domain/host for Freqtrade access:"
-    echo "  - Leave empty: Use localhost (development mode)"
-    echo "  - Enter domain: Use custom domain with Traefik (production mode)"
-    echo "  - Examples: ft01.subx.fun, trading.mydomain.com"
-    read -p "Enter host domain (or press Enter for localhost): " FREQTRADE_HOST
-
-    # Normalize accidental 'N'/'n' answers (from non-interactive runs) to empty
-    if [ "$FREQTRADE_HOST" = "N" ] || [ "$FREQTRADE_HOST" = "n" ]; then
-        FREQTRADE_HOST=""
-    fi
-
-    if [ -n "$FREQTRADE_HOST" ]; then
-        info "✅ Production mode: Using domain $FREQTRADE_HOST"
-        # Update docker-compose.yml with custom domain
-        if [ -f "docker-compose.yml" ]; then
-            # Update the Traefik host rule
-            sed -i.bak "s|Host(\`.*\`)|Host(\`${FREQTRADE_HOST}\`)|g" docker-compose.yml
-            success "✅ Updated docker-compose.yml with domain: $FREQTRADE_HOST"
-            rm -f docker-compose.yml.bak
-        fi
-
-        # Update CORS origins in config
-        if [ -f "user_data/config_price-act_strategy.json" ] && command_exists jq; then
-            info "🔧 Adding domain to CORS origins..."
-            jq --arg domain "$FREQTRADE_HOST" \
-               '.api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", ("https://" + $domain), ("http://" + $domain)]' \
-               user_data/config_price-act_strategy.json > user_data/config_temp.json && \
-            mv user_data/config_temp.json user_data/config_price-act_strategy.json
-            success "✅ Added $FREQTRADE_HOST to CORS origins"
-        fi
-
-        DEPLOY_MODE_DISPLAY="Production (with domain)"
-    else
-        info "✅ Development mode: Using localhost"
-        # Remove Traefik labels for localhost mode
-        if [ -f "docker-compose.yml" ]; then
-            # Comment out Traefik labels for localhost deployment
-            sed -i.bak '/traefik\.enable=true/,/traefik\.http\.services\.freqtrade\.loadbalancer\.server\.port=8080/ s/^/      # /' docker-compose.yml
-            success "✅ Configured for localhost deployment (Traefik disabled)"
-            rm -f docker-compose.yml.bak
-        fi
-        DEPLOY_MODE_DISPLAY="Development (localhost)"
-        FREQTRADE_HOST="localhost"
-    fi
-
-    # Get proxy configuration
-    echo ""
-    info "🌐 Proxy Configuration (for restricted countries)"
-    read -p "Do you need to use a proxy for Freqtrade? (y/N): " USE_PROXY
-
-    PROXY_URL=""
-    if [[ "$USE_PROXY" =~ ^[Yy]$ ]]; then
-        read -p "Enter proxy URL (format: http://username:password@proxy.server:port): " PROXY_URL
-        if [ -n "$PROXY_URL" ]; then
-            info "🔧 Configuring proxy settings..."
-
-            # Update docker-compose.yml with proxy settings
-            if [ -f "docker-compose.yml" ]; then
-                # Check if proxy environment variables already exist
-                if grep -q "HTTP_PROXY=" docker-compose.yml; then
-                    # Update existing proxy settings
-                    sed -i.bak "s|HTTP_PROXY=.*|HTTP_PROXY=${PROXY_URL}|g" docker-compose.yml
-                    sed -i.bak "s|HTTPS_PROXY=.*|HTTPS_PROXY=${PROXY_URL}|g" docker-compose.yml
-                    success "✅ Updated existing proxy settings in docker-compose.yml"
-                else
-                    # Add proxy settings to freqtrade service environment
-                    sed -i.bak '/FREQTRADE__API_SERVER__LISTEN_PORT=8080/a\
-          # Proxy settings for restricted countries\
-          - HTTP_PROXY='"${PROXY_URL}"'\
-          - HTTPS_PROXY='"${PROXY_URL}"'\
-          - NO_PROXY=localhost,127.0.0.1' docker-compose.yml
-                    success "✅ Added proxy settings to docker-compose.yml"
-                fi
-                rm -f docker-compose.yml.bak
-            fi
-
-            # Update Freqtrade config with proxy settings
-            update_proxy_config "$PROXY_URL"
-            success "✅ Proxy configured: ${PROXY_URL}"
-        else
-            warn "⚠️  No proxy URL provided, skipping proxy configuration"
-        fi
-    else
-        info "ℹ️  No proxy configured"
-        # Ensure no proxy settings are applied
-        update_proxy_config ""
-    fi
-
-    info "📝 Creating .env file with credentials..."
-    cat > .env << EOF
-# Freqtrade API Configuration
-FREQTRADE_API_URL=${FREQTRADE_API_URL:-http://freqtrade-bot01:8080}
-FREQTRADE_API_USERNAME=${FREQTRADE_USERNAME}
-FREQTRADE_API_PASSWORD=${FREQTRADE_PASSWORD}
-# FREQTRADE_API_TOKEN is intentionally not set here because WS token is not a JWT
-FREQTRADE_API_TIMEOUT=15
-
-# Proxy Configuration
-PROXY_URL=${PROXY_URL}
-
-# Security
-JWT_SECRET_KEY=${JWT_SECRET}
-WS_TOKEN=${WS_TOKEN}
+# Generate docker-compose.yml
+cat > docker-compose.yml << EOF
+services:
+  freqtrade:
+    image: freqtradeorg/freqtrade:stable
+    container_name: freqtrade-bot01
+    restart: unless-stopped
+    volumes:
+      - ./user_data:/freqtrade/user_data
+      - ./data:/freqtrade/data
+    command: >
+      trade --config /freqtrade/user_data/config_price-act_strategy.json
+            --strategy PriceActionStrategy
+            --dry-run
+    environment:
+      - FREQTRADE__API_SERVER__ENABLED=true
+      - FREQTRADE__API_SERVER__LISTEN_IP_ADDRESS=0.0.0.0
+      - FREQTRADE__API_SERVER__LISTEN_PORT=8080
 EOF
-    success "✅ Created .env file with secure credentials"
+
+# Add proxy settings if configured
+if [ -n "$PROXY_URL" ]; then
+    cat >> docker-compose.yml << EOF
+      # Proxy settings for restricted countries
+      - HTTP_PROXY=${PROXY_URL}
+      - HTTPS_PROXY=${PROXY_URL}
+      - NO_PROXY=localhost,127.0.0.1
+EOF
+fi
+
+# Continue with ports and labels
+cat >> docker-compose.yml << EOF
+    ports:
+      - "6677:8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.freqtrade.rule=${HOST_RULE}"
+      - "traefik.http.routers.freqtrade.entrypoints=websecure"
+      - "traefik.http.routers.freqtrade.tls.certresolver=letsencrypt"
+      - "traefik.http.services.freqtrade.loadbalancer.server.port=8080"
+    networks:
+      - traefik
+      - default
+
+networks:
+  traefik:
+    external: true
+EOF
+
+success "✅ Generated docker-compose.yml for ${DEPLOY_MODE_DISPLAY}"
+
+# Update Freqtrade config with proxy settings
+if [ -n "$PROXY_URL" ]; then
+    update_proxy_config "$PROXY_URL"
+    info "ℹ️  Proxy configured: ${PROXY_URL}"
+else
+    update_proxy_config ""
 fi
 
 # Backup existing database if it exists
@@ -568,42 +422,28 @@ success "🎉 Deployment completed!"
 echo ""
 info "🚀 Deploy Mode: ${DEPLOY_MODE_DISPLAY:-Development (localhost)}"
 echo ""
-echo "  - Freqtrade API: http://localhost:6677"
-echo ""
-info "🐳 Docker Network URLs (for production):"
-echo "  - Freqtrade API: http://freqtrade-bot01:8080"
-echo "  - Network: gpt-trader_default"
-echo ""
-info "🌐 Production URLs:"
+
+# Show access URLs
 if [ "$FREQTRADE_HOST" != "localhost" ] && [ -n "$FREQTRADE_HOST" ]; then
-  echo "  - Freqtrade API: https://${FREQTRADE_HOST}"
-  echo "  - Freqtrade UI: https://${FREQTRADE_HOST}"
+  echo "  🌐 Production URL: https://${FREQTRADE_HOST}"
 else
-  echo "  - Freqtrade API: http://localhost:6677 (development mode)"
-  echo "  - Freqtrade UI: http://localhost:6677 (development mode)"
+  echo "  🌐 Local URL: http://localhost:6677"
 fi
 echo ""
-info "🔐 Security Information:"
-echo "  - Freqtrade Username: ${FREQTRADE_USERNAME}"
-echo "  - Freqtrade Password: ${FREQTRADE_PASSWORD}"
-echo "  - WebSocket Token: ${WS_TOKEN}"
-echo "  - JWT Secret: ${JWT_SECRET:0:10}..."
+
+info "🔐 Credentials (from .env file):"
+echo "  - Username: ${FREQTRADE_USERNAME}"
+echo "  - Password: ${FREQTRADE_PASSWORD}"
 echo ""
-warn "⚠️  IMPORTANT SETUP NOTES:"
+
+warn "⚠️  IMPORTANT NOTES:"
 echo "  1. System is in DRY-RUN mode (safe, no real trading)"
 echo "  2. For live trading: ./update_exchange_credentials.sh"
-echo "  3. Save the credentials above in a secure location"
-echo "  4. Never commit .env file to version control"
+echo "  3. To update credentials: ./generate_credentials.sh"
 echo ""
-info "📁 Data persistence:"
-echo "  - Database: ./data/crypto_data.db"
-echo "  - Freqtrade config: ./user_data/config_price-act_strategy.json"
-echo "  - Environment vars: ./.env"
-echo ""
+
 info "🔧 Useful commands:"
-echo "  - View all logs: docker-compose logs -f"
-echo "  - View FreqUI logs: docker-compose logs -f freqtrade-ui"
-echo "  - View Freqtrade logs: docker-compose logs -f freqtrade"
-echo "  - Stop services: docker-compose down"
+echo "  - View logs: docker-compose logs -f freqtrade"
+echo "  - Stop: docker-compose down"
 echo "  - Restart: docker-compose restart"
-echo "  - Update credentials: ./deploy.sh"
+echo "  - Generate new credentials: ./generate_credentials.sh"

@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     volumes:
       - ./user_data:/freqtrade/user_data
+      - ./data:/freqtrade/data
     command: >
       trade --config /freqtrade/user_data/config_price-act_strategy.json
             --strategy PriceActionStrategy
@@ -13,11 +14,6 @@ services:
       - FREQTRADE__API_SERVER__ENABLED=true
       - FREQTRADE__API_SERVER__LISTEN_IP_ADDRESS=0.0.0.0
       - FREQTRADE__API_SERVER__LISTEN_PORT=8080
-      # Pairlist now configured in JSON only to avoid env merge conflicts
-      # Proxy settings (configured via .env file)
-      - HTTP_PROXY=${PROXY_URL}
-      - HTTPS_PROXY=${PROXY_URL}
-      - NO_PROXY=localhost,127.0.0.1
     ports:
       - "6677:8080"
     labels:
