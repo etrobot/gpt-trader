@@ -1,6 +1,6 @@
 {
-  "bot_name": "classic-bot",
-  "strategy": "classic_strategy",
+  "bot_name": "price-action-bot",
+  "strategy": "price-act_strategy",
   "dry_run": true,
   "timeframe": "5m",
   "startup_candle_count": 50,
@@ -12,8 +12,8 @@
   "force_entry_enable": true,
   "exchange": {
     "name": "okx",
-    "key": "",
-    "secret": "",
+    "key": "${OKX_API_KEY}",
+    "secret": "${OKX_SECRET}",
     "ccxt_config": {
       "enableRateLimit": true,
       "rateLimit": 100
@@ -51,11 +51,11 @@
     "enabled": true,
     "listen_ip_address": "0.0.0.0",
     "listen_port": 8080,
-    "username": "admin_isfiz4zO",
-    "password": "oqQfElIbuBVNy2L0Gw73Sn3a",
-    "jwt_secret_key": "R4evarisfPPX83T6qve1jJO4Iw8f05CsavKqZQg4T4UN6v7cNgHwkrHZI0kQhB",
+    "username": "${FREQTRADE_USERNAME}",
+    "password": "${FREQTRADE_PASSWORD}",
+    "jwt_secret_key": "${JWT_SECRET}",
     "ws_token": [
-      "M3MDosRr9QQZUAh2TgK9krh7h5V9zc83"
+      "${WS_TOKEN}"
     ],
     "CORS_origins": [
       "http://localhost:3000",

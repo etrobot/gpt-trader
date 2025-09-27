@@ -12,16 +12,22 @@
 
 ## 🎯 策略介绍
 
-经典K线形态策略 (`ClassicStrategy`)，基于连续阳线/阴线模式：
+纯K线策略 (`PriceActionStrategy`)，完全基于开高低收价格数据，拒绝技术指标和量能分析：
 
-**入场条件:**
-- 连续3阳线后震荡10根K线
-- 连续2阳线 + 价格在EMA20之上  
-- RSI < 80 (避免超买)
+**策略架构 - 分层结构:**
+- **第零层：K线预处理** - 基础K线属性计算和多周期封装
+- **第一层：基础判断方法** - 趋势判断、波幅增强检测
+- **第二层：组合策略入场** - 突破入场、抢反弹策略
+- **第三层：简单出场条件** - 固定5根K线出场（拒绝其他条件）
 
-**出场条件:**
-- 持仓7根K线后强制退出
-- 连续3阴线或RSI > 85
+**入场条件示例:**
+- **突破入场**：趋势上升 + 波幅增强 + 最后2根阳线
+- **抢反弹**：趋势下降 + 波幅增强 + 1根阳线 + 近期阴线比例>60%
+
+**出场机制:**
+- 固定25分钟（5根5分钟K线）强制出场
+- 5%止损保护
+- ROI目标：初始10%，第25分钟无视盈利强制出场
 
 ## 🚀 快速开始
 
@@ -37,15 +43,15 @@ python backtest.py --action hyperopt --epochs 50
 ## 📁 项目结构
 
 ```
-├── docker-compose.yml        # Docker 配置
+├── docker-cprice-act_strategy  # Docker 配置
 ├── backtest.py              # 回测分析脚本
-├── strategy_manager.py       # 策略管理器
+├── strategy_maprice-act_strategy 策略管理器
 ├── run_analysis.sh          # 交互式启动
 ├── user_data/
 │   ├── strategies/
-│   │   └── classic_strategy.py  # K线形态策略
+│   │   └── price-act_strategy.py  # K线形态策略
 │   ├── strategy_backups/     # 策略备份目录
-│   └── config_classic_strategy.json  # Freqtrade 配置
+│   └── config_price-act_strategy.json  # Freqtrade 配置
 └── pyproject.toml           # 项目配置
 ```
 
@@ -56,10 +62,10 @@ python backtest.py --action hyperopt --epochs 50
 docker-compose run --rm freqtrade download-data --exchange binance --pairs BTC/USDT --timeframes 5m --days 30
 
 # 策略回测
-docker-compose run --rm freqtrade backtesting --strategy ClassicStrategy --timerange 20240101-
+docker-compose run --rm freqtrade backtesting --strategy PriceActionStrategy --timerange 20240101-
 
 # 参数优化
-docker-compose run --rm freqtrade hyperopt --strategy ClassicStrategy --epochs 100
+docker-compose run --rm freqtrade hyperopt --strategy PriceActionStrategy --epochs 100
 
 # 策略管理
 python strategy_manager.py
@@ -73,7 +79,7 @@ python strategy_manager.py
 - 基于回测结果创建新的优化策略
 - 保留原策略不变
 - 智能调整 ROI、止损、过滤条件
-- 文件名：`ClassicStrategy_optimized_1219_1430.py`
+- 文件名：`PriceActionStrategy_optimized_1219_1430.py`
 
 ### 2. 复制策略 📋
 - **用户输入策略名**复制出新策略
@@ -90,7 +96,7 @@ python strategy_manager.py
 ```bash
 # 场景1：测试新想法
 ./run_analysis.sh -> 5) 策略管理 -> 2) 复制策略
-输入源策略: ClassicStrategy
+输入源策略: PriceActionStrategy
 输入新策略: MyTestStrategy
 
 # 场景2：优化现有策略

@@ -1,7 +1,7 @@
 [project]
-name = "freqtrade-classic-strategy"
+name = "freqtrade-price-action-strategy"
 version = "0.1.0"
-description = "Docker Freqtrade classic candlestick pattern strategy"
+description = "Docker Freqtrade price-action candlestick pattern strategy"
 readme = "README.md"
 requires-python = ">=3.8"
 dependencies = [

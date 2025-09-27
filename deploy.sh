@@ -58,16 +58,16 @@ if [ ! -d "user_data" ]; then
     success "✅ Created user_data directory from user_data_template"
     
     # Replace template placeholders immediately after creation
-    if [ -f "user_data/config_classic_strategy.json" ]; then
-      info "🔧 Replacing template placeholders..."
-      sed -i.bak 's/"\${PROXY_URL}"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-      sed -i.bak 's/"YOUR_USERNAME_HERE"/"admin"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-      sed -i.bak 's/"YOUR_PASSWORD_HERE"/"password"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-      sed -i.bak 's/"YOUR_JWT_SECRET_HERE"/"temp_secret"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-      sed -i.bak 's/"YOUR_WS_TOKEN_HERE"/"temp_token"/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-      sed -i.bak 's/"YOUR_API_KEY_HERE"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-      sed -i.bak 's/"YOUR_API_SECRET_HERE"/""/g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
-      success "✅ Template placeholders replaced"
+    if [ -f "user_data/config_price-act_strategy.json" ]; then
+      info "🔧 Replacing template placeholders with temporary values..."
+      sed -i.bak 's/"\${FREQTRADE_USERNAME}"/"temp_admin"/g' user_data/config_price-act_strategy.json 2>/dev/null && rm -f user_data/config_price-act_strategy.json.bak || true
+      sed -i.bak 's/"\${FREQTRADE_PASSWORD}"/"temp_password"/g' user_data/config_price-act_strategy.json 2>/dev/null && rm -f user_data/config_price-act_strategy.json.bak || true
+      sed -i.bak 's/"\${JWT_SECRET}"/"temp_jwt_secret"/g' user_data/config_price-act_strategy.json 2>/dev/null && rm -f user_data/config_price-act_strategy.json.bak || true
+      sed -i.bak 's/"\${WS_TOKEN}"/"temp_ws_token"/g' user_data/config_price-act_strategy.json 2>/dev/null && rm -f user_data/config_price-act_strategy.json.bak || true
+      sed -i.bak 's/"\${OKX_API_KEY}"/""/g' user_data/config_price-act_strategy.json 2>/dev/null && rm -f user_data/config_price-act_strategy.json.bak || true
+      sed -i.bak 's/"\${OKX_SECRET}"/""/g' user_data/config_price-act_strategy.json 2>/dev/null && rm -f user_data/config_price-act_strategy.json.bak || true
+      sed -i.bak 's/"\${PROXY_URL}"/""/g' user_data/config_price-act_strategy.json 2>/dev/null && rm -f user_data/config_price-act_strategy.json.bak || true
+      success "✅ Template placeholders replaced with temporary values"
     fi
   else
     error "❌ 缺少 user_data_template 目录，无法创建 user_data"
@@ -78,14 +78,14 @@ else
 fi
 
 # Check required files exist
-if [ ! -f "user_data/strategies/classic_strategy.py" ]; then
-  error "❌ Missing trading strategy file: user_data/strategies/classic_strategy.py"
+if [ ! -f "user_data/strategies/price-act_strategy.py" ]; then
+  error "❌ Missing trading strategy file: user_data/strategies/price-act_strategy.py"
   exit 1
 fi
 
 # Check if config file exists
-if [ ! -f "user_data/config_classic_strategy.json" ]; then
-  error "❌ Missing config file: user_data/config_classic_strategy.json"
+if [ ! -f "user_data/config_price-act_strategy.json" ]; then
+  error "❌ Missing config file: user_data/config_price-act_strategy.json"
   exit 1
 fi
 
@@ -150,7 +150,7 @@ fi
 # Function to update Freqtrade config with proxy settings
 update_proxy_config() {
     local proxy_url="$1"
-    if [ -f "user_data/config_classic_strategy.json" ] && command_exists jq; then
+    if [ -f "user_data/config_price-act_strategy.json" ] && command_exists jq; then
         info "🔧 Updating Freqtrade config with proxy settings..."
         
         if [ -n "$proxy_url" ] && [ "$proxy_url" != "" ]; then
@@ -164,31 +164,31 @@ update_proxy_config() {
                   "http": $proxy_url,
                   "https": $proxy_url
                 }' \
-               user_data/config_classic_strategy.json > user_data/config_temp.json && \
-            mv user_data/config_temp.json user_data/config_classic_strategy.json
+               user_data/config_price-act_strategy.json > user_data/config_temp.json && \
+            mv user_data/config_temp.json user_data/config_price-act_strategy.json
             success "✅ Applied proxy settings: $proxy_url"
         else
             # Remove proxy configuration or set to null
             jq 'del(.exchange.ccxt_config.proxies) | del(.exchange.ccxt_async_config.proxies)' \
-               user_data/config_classic_strategy.json > user_data/config_temp.json && \
-            mv user_data/config_temp.json user_data/config_classic_strategy.json
+               user_data/config_price-act_strategy.json > user_data/config_temp.json && \
+            mv user_data/config_temp.json user_data/config_price-act_strategy.json
             success "✅ Removed proxy settings"
         fi
         
         # Also replace template placeholders if they exist
-        sed -i.bak 's/\${PROXY_URL}//g' user_data/config_classic_strategy.json 2>/dev/null && rm -f user_data/config_classic_strategy.json.bak || true
+        sed -i.bak 's/"\${PROXY_URL}"/""/g' user_data/config_price-act_strategy.json 2>/dev/null && rm -f user_data/config_price-act_strategy.json.bak || true
     fi
 }
 
 # Update Freqtrade config with credentials (either new or existing)
-if [ -f "user_data/config_classic_strategy.json" ] && [ -n "$FREQTRADE_USERNAME" ]; then
+if [ -f "user_data/config_price-act_strategy.json" ] && [ -n "$FREQTRADE_USERNAME" ]; then
     info "🔧 Updating Freqtrade config with credentials..."
 
     # Create clean backup name without stacking timestamps
-    if [ -f "user_data/config_classic_strategy.json.backup" ]; then
-        rm -f user_data/config_classic_strategy.json.backup
+    if [ -f "user_data/config_price-act_strategy.json.backup" ]; then
+        rm -f user_data/config_price-act_strategy.json.backup
     fi
-    cp user_data/config_classic_strategy.json user_data/config_classic_strategy.json.backup
+    cp user_data/config_price-act_strategy.json user_data/config_price-act_strategy.json.backup
 
     # Update existing config with credentials using jq if available
     if command_exists jq; then
@@ -201,14 +201,14 @@ if [ -f "user_data/config_classic_strategy.json" ] && [ -n "$FREQTRADE_USERNAME"
             .api_server.jwt_secret_key = $jwt_secret |
             .api_server.ws_token = [$ws_token] |
             .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251"]' \
-           user_data/config_classic_strategy.json > user_data/config_temp.json && \
-        mv user_data/config_temp.json user_data/config_classic_strategy.json
+           user_data/config_price-act_strategy.json > user_data/config_temp.json && \
+        mv user_data/config_temp.json user_data/config_price-act_strategy.json
         success "✅ Updated Freqtrade config with credentials"
         
         # Apply proxy settings if available
         update_proxy_config "$PROXY_URL"
     else
-        warn "⚠️  jq not available - please manually update API credentials in user_data/config_classic_strategy.json"
+        warn "⚠️  jq not available - please manually update API credentials in user_data/config_price-act_strategy.json"
     fi
 fi
 
@@ -234,13 +234,13 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
         read -p "WebSocket Token: " WS_TOKEN
 
         # Update user_data config with manually entered credentials
-        if [ -f "user_data/config_classic_strategy.json" ] && command_exists jq; then
+        if [ -f "user_data/config_price-act_strategy.json" ] && command_exists jq; then
             info "🔧 Updating Freqtrade config with manually entered credentials..."
             # Create clean backup name without stacking timestamps
-            if [ -f "user_data/config_classic_strategy.json.backup" ]; then
-                rm -f user_data/config_classic_strategy.json.backup
+            if [ -f "user_data/config_price-act_strategy.json.backup" ]; then
+                rm -f user_data/config_price-act_strategy.json.backup
             fi
-            cp user_data/config_classic_strategy.json user_data/config_classic_strategy.json.backup
+            cp user_data/config_price-act_strategy.json user_data/config_price-act_strategy.json.backup
 
             jq --arg username "$FREQTRADE_USERNAME" \
                --arg password "$FREQTRADE_PASSWORD" \
@@ -251,8 +251,8 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
                 .api_server.jwt_secret_key = $jwt_secret |
                 .api_server.ws_token = [$ws_token] |
                 .api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251"]' \
-               user_data/config_classic_strategy.json > user_data/config_temp.json && \
-            mv user_data/config_temp.json user_data/config_classic_strategy.json
+               user_data/config_price-act_strategy.json > user_data/config_temp.json && \
+            mv user_data/config_temp.json user_data/config_price-act_strategy.json
             success "✅ Updated Freqtrade config with manually entered credentials"
             
             # Apply proxy settings if available
@@ -289,12 +289,12 @@ if [ "$SKIP_ENV_CREATION" != "true" ]; then
         fi
 
         # Update CORS origins in config
-        if [ -f "user_data/config_classic_strategy.json" ] && command_exists jq; then
+        if [ -f "user_data/config_price-act_strategy.json" ] && command_exists jq; then
             info "🔧 Adding domain to CORS origins..."
             jq --arg domain "$FREQTRADE_HOST" \
                '.api_server.CORS_origins = ["http://localhost:3000", "http://localhost:14251", ("https://" + $domain), ("http://" + $domain)]' \
-               user_data/config_classic_strategy.json > user_data/config_temp.json && \
-            mv user_data/config_temp.json user_data/config_classic_strategy.json
+               user_data/config_price-act_strategy.json > user_data/config_temp.json && \
+            mv user_data/config_temp.json user_data/config_price-act_strategy.json
             success "✅ Added $FREQTRADE_HOST to CORS origins"
         fi
 
@@ -450,11 +450,11 @@ info "⏳ Waiting for services to start..."
 sleep 12
 
 # Dump final freqtrade config (from host bind mount) for debugging
-info "🧾 Final freqtrade config (host): user_data/config_classic_strategy.json"
+info "🧾 Final freqtrade config (host): user_data/config_price-act_strategy.json"
 if command_exists jq; then
-  jq '.' user_data/config_classic_strategy.json | head -200 || cat user_data/config_classic_strategy.json | head -200
+  jq '.' user_data/config_price-act_strategy.json | head -200 || cat user_data/config_price-act_strategy.json | head -200
 else
-  cat user_data/config_classic_strategy.json | head -200
+  cat user_data/config_price-act_strategy.json | head -200
 fi
 
 # Pairlists 仅由 JSON 配置提供，避免 env 深合并冲突
@@ -558,7 +558,7 @@ echo "  4. Never commit .env file to version control"
 echo ""
 info "📁 Data persistence:"
 echo "  - Database: ./data/crypto_data.db"
-echo "  - Freqtrade config: ./user_data/config_classic_strategy.json"
+echo "  - Freqtrade config: ./user_data/config_price-act_strategy.json"
 echo "  - Environment vars: ./.env"
 echo ""
 info "🔧 Useful commands:"
