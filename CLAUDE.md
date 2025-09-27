@@ -56,8 +56,21 @@ docker-compose run --rm freqtrade hyperopt --strategy PriceActionStrategy --epoc
   - **Preprocessing**: Computes bullish/bearish markers, signed lengths, multi-timeframe (5m/10m/15m/30m/60m) simulations.
   - **Tools**: Trend judgment (segmented close comparison), amplitude enhancement (rolling quantile).
   - **Entries**: Use any of these： Breakout (uptrend + enhanced amplitude + 2 bullish candles); Rebound (downtrend + enhanced + 1 bullish + >60% bearish recent).
-  - **Exits**: Fixed 5-candle hold (25 minutes on 5m timeframe) or 5% stoploss; ROI table for 10% target.
-- **Config**: `user_data/config_price-act_strategy.json` - Freqtrade configuration with API server enabled (port 8080), dry-run mode, pair whitelist (BTC/USDT, ETH/USDT), 5m timeframe.
+  - **Exits**: Fixed 5-candle hold (25 minutes on 5m timeframe) or 50% stoploss; ROI table for 10% target.
+- **Config**: `user_data/config_price-act_strategy.json` - Freqtrade configuration with API server enabled (port 8080), dry-run mode, pair whitelist (BTC/USDT, ETH/USDT, SOL/USDT, AVAX/USDT, DOGE/USDT, XRP/USDT), 5m timeframe.
+
+### Backtest Performance (2025-06-29 to 2025-09-27, 90 days)
+- **Total Return**: +6.55% (65.493 USDT from 1000 USDT)
+- **Annualized Return**: 29.34% CAGR
+- **Win Rate**: 97.3% (107 wins, 3 losses out of 110 trades)
+- **Maximum Drawdown**: 4.29%
+- **Sharpe Ratio**: 4.90
+- **Profit Factor**: 2.37
+- **Best Trade**: +2.88% (AVAX/USDT)
+- **Worst Trade**: -20.39% (AVAX/USDT)
+- **Exit Distribution**: 107 ROI exits (avg +1.06%), 3 force exits (avg -15.91%), 0 stop losses
+- **Avg Trade Duration**: 2 days 8 hours
+- **Trading Pairs Performance**: SOL/USDT (+2.90%), ETH/USDT (+2.24%), AVAX/USDT (+1.52%), BTC/USDT (-0.10%)
 
 ### Data Flow
 1. Deployment copies templates to `user_data/`, generates secure credentials, starts Freqtrade container.

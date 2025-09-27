@@ -46,8 +46,8 @@ class PriceActionStrategy(IStrategy):
         "25": -1      # 默认25分钟后强制退出（5根K线 × 5分钟）
     }
 
-    # 止损设置
-    stoploss = -0.05
+    # 止损设置 - 简单固定止损
+    stoploss = -0.15  # 15%止损，给足够空间
 
     # 交易参数
     startup_candle_count: int = 120  # 确保有足够历史数据进行多周期分析
@@ -56,6 +56,10 @@ class PriceActionStrategy(IStrategy):
     exit_profit_only = False
     ignore_roi_if_entry_signal = False
     position_adjustment_enable = False
+
+    # 简化止损参数
+    use_custom_stoploss = False
+    trailing_stop = False
 
     # 基础工具方法参数
     trend_analysis_period: int = 20     # 趋势判断的K线周期数

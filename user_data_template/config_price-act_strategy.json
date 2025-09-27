@@ -1,15 +1,11 @@
 {
-  "bot_name": "price-action-bot",
-  "strategy": "price-act_strategy",
-  "dry_run": true,
-  "timeframe": "5m",
-  "startup_candle_count": 50,
   "max_open_trades": 3,
   "stake_currency": "USDT",
   "stake_amount": 100,
   "tradable_balance_ratio": 0.99,
   "fiat_display_currency": "USD",
-  "force_entry_enable": true,
+  "timeframe": "5m",
+  "dry_run": true,
   "exchange": {
     "name": "okx",
     "key": "${OKX_API_KEY}",
@@ -21,18 +17,31 @@
     "ccxt_async_config": {
       "enableRateLimit": true,
       "rateLimit": 100
-    }
+    },
+    "pair_whitelist": [
+      "BTC/USDT",
+      "ETH/USDT",
+      "SOL/USDT",
+      "AVAX/USDT",
+      "DOGE/USDT",
+      "XRP/USDT"
+    ],
+    "pair_blacklist": []
   },
   "pairlists": [
     {
-      "method": "VolumePairList",
-      "number_assets": 20,
-      "sort_key": "quoteVolume",
-      "min_value": 1000000
+      "method": "StaticPairList"
     }
   ],
-  "pair_whitelist": [],
   "pair_blacklist": [],
+  "minimal_roi": {
+    "0": 0.10,
+    "25": 0.05,
+    "50": 0.02,
+    "75": 0.01
+  },
+  "stoploss": -0.15,
+  "trailing_stop": false,
   "unfilledtimeout": {
     "entry": 10,
     "exit": 30
@@ -61,6 +70,5 @@
       "http://localhost:3000",
       "http://localhost:14251"
     ]
-  },
-  "strategy_path": "/freqtrade/user_data/strategies"
+  }
 }
