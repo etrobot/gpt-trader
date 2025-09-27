@@ -40,14 +40,11 @@ class PriceActionStrategy(IStrategy):
     INTERFACE_VERSION = 3
     timeframe = "5m"  # freqtrade固定使用5分钟
 
-    # 动态ROI配置：基于配置的退出K线数量
-    @property
-    def minimal_roi(self):
-        exit_minutes = self.exit_candle_count * 5  # K线数量 × 5分钟
-        return {
-            "0": 0.10,           # 初始目标收益10%
-            str(exit_minutes): -1  # 配置的K线数量后强制退出
-        }
+    # ROI配置：基于配置的退出K线数量
+    minimal_roi = {
+        "0": 0.10,    # 初始目标收益10%
+        "25": -1      # 默认25分钟后强制退出（5根K线 × 5分钟）
+    }
 
     # 止损设置
     stoploss = -0.05
@@ -73,6 +70,16 @@ class PriceActionStrategy(IStrategy):
     exit_candle_count: int = 5          # 强制退出的K线数量
     breakout_bull_candles: int = 2      # 突破策略需要的连续阳线数量
     rebound_bull_candles: int = 1       # 反弹策略需要的阳线数量
+
+    def __init__(self, config: dict) -> None:
+        """初始化策略，根据配置动态设置ROI"""
+        super().__init__(config)
+        # 动态设置ROI基于退出K线数量
+        exit_minutes = self.exit_candle_count * 5  # K线数量 × 5分钟
+        self.minimal_roi = {
+            "0": 0.10,                 # 初始目标收益10%
+            str(exit_minutes): -1      # 配置的K线数量后强制退出
+        }
 
     # ======================= 初始化：K线预处理类方法 =======================
     

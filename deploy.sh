@@ -447,7 +447,7 @@ docker-compose -f $COMPOSE_FILE up -d
 
 # Wait for services to be ready
 info "⏳ Waiting for services to start..."
-sleep 12
+sleep 20
 
 # Dump final freqtrade config (from host bind mount) for debugging
 info "🧾 Final freqtrade config (host): user_data/config_price-act_strategy.json"
@@ -479,6 +479,26 @@ fi
 info "📡 Using API URL: $API_TEST_URL"
 
 if command_exists curl; then
+  # Wait for Freqtrade to be fully initialized (check for STOPPED state)
+  info "⏳ Waiting for Freqtrade to complete initialization..."
+  INIT_TIMEOUT=60
+  INIT_COUNT=0
+  
+  while [ $INIT_COUNT -lt $INIT_TIMEOUT ]; do
+    if curl -sSf "${API_TEST_URL}/api/v1/ping" | grep -qi "pong" 2>/dev/null; then
+      # Check if bot is in STOPPED state (fully initialized)
+      if docker logs freqtrade-bot01 2>/dev/null | tail -10 | grep -q "state='STOPPED'"; then
+        success "✅ Freqtrade fully initialized and ready"
+        break
+      fi
+    fi
+    sleep 2
+    INIT_COUNT=$((INIT_COUNT + 2))
+    if [ $((INIT_COUNT % 10)) -eq 0 ]; then
+      info "⏳ Still waiting for initialization... (${INIT_COUNT}s/${INIT_TIMEOUT}s)"
+    fi
+  done
+  
   # Test API ping
   if curl -sSf "${API_TEST_URL}/api/v1/ping" | grep -qi "pong"; then
     success "✅ Freqtrade API is responding correctly"
@@ -488,12 +508,31 @@ if command_exists curl; then
     if curl -sSf -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "${API_TEST_URL}/api/v1/whitelist" | grep -qi "whitelist"; then
       success "✅ Freqtrade API authentication successful"
       
-      # Start simulation trading
+      # Start simulation trading with retry logic
       info "🚀 Starting simulation trading..."
-      TRADING_RESPONSE=$(curl -s -X POST -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "${API_TEST_URL}/api/v1/start")
+      RETRY_COUNT=0
+      MAX_RETRIES=3
       
+      while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+        TRADING_RESPONSE=$(curl -s -X POST -u "${FREQTRADE_USERNAME}:${FREQTRADE_PASSWORD}" "${API_TEST_URL}/api/v1/start")
+        
+        if echo "$TRADING_RESPONSE" | grep -qi "starting\|already running"; then
+          success "✅ Simulation trading started successfully"
+          break
+        else
+          RETRY_COUNT=$((RETRY_COUNT + 1))
+          if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+            warn "⚠️  Attempt $RETRY_COUNT failed, retrying in 5 seconds..."
+            sleep 5
+          else
+            warn "⚠️  Failed to start simulation trading after $MAX_RETRIES attempts: $TRADING_RESPONSE"
+            break
+          fi
+        fi
+      done
+      
+      # Only proceed if trading started successfully
       if echo "$TRADING_RESPONSE" | grep -qi "starting\|already running"; then
-        success "✅ Simulation trading started successfully"
         
         # Wait a moment for trades to initialize
         info "⏳ Waiting for initial trades to execute..."
