@@ -334,11 +334,11 @@ class PriceActionStrategy(IStrategy):
             bull_conditions = bull_conditions & dataframe['is_bullish'].shift(i)
         last_n_bulls = bull_conditions
 
-        # 条件4：最后一根的body_length不是最长的
-        not_longest_body = dataframe['body_length'] < dataframe['body_length'].rolling(self.breakout_bull_candles).max()
+        # 条件4：最后一根的body_length是最长的
+        longest_body = dataframe['body_length'] == dataframe['body_length'].rolling(self.breakout_bull_candles).max()
 
         # 组合策略条件
-        result = uptrend & amp_enhanced & last_n_bulls & not_longest_body
+        result = uptrend & amp_enhanced & last_n_bulls & longest_body
 
         return result
 
@@ -422,20 +422,3 @@ class PriceActionStrategy(IStrategy):
         不使用信号退出，仅依靠时间和ROI退出
         """
         return dataframe
-
-    def custom_exit(self, pair: str, trade, current_time, current_rate, 
-                   current_profit, **kwargs) -> Optional[str]:
-        """
-        第三层：出场机制
-        仅按入场后K线数量：配置的K线数量后强制出场
-        拒绝一切其他出场条件
-        """
-        # 计算持仓时间（分钟）
-        hold_minutes = (current_time - trade.open_date_utc).total_seconds() / 60
-        
-        # N根5分钟K线后强制出场（N由配置决定）
-        exit_minutes = self.exit_candle_count * 5
-        if hold_minutes >= exit_minutes:
-            return f"{self.exit_candle_count}_candles_exit"
-            
-        return None
