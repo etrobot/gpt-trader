@@ -36,10 +36,8 @@
   ],
   "pair_blacklist": [],
   "minimal_roi": {
-    "0": 0.10,
-    "25": 0.05,
-    "50": 0.02,
-    "75": -1
+    "50": 0.1,
+    "180": -1
   },
   "stoploss": -0.15,
   "trailing_stop": false,

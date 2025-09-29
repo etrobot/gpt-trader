@@ -350,7 +350,6 @@ class PriceActionStrategy(IStrategy):
         1. 趋势为下降 (trend_direction == -1)
         2. 波幅增强 (amplitude_enhanced == True)
         3. 最后N根K线为阳线（N由rebound_bull_candles配置）
-        4. 阴线数量 > 60%（近期K线统计）
         """
         result = pd.Series(False, index=dataframe.index)
         
@@ -374,14 +373,6 @@ class PriceActionStrategy(IStrategy):
                     break
             if not bull_check:
                 continue
-                
-            # 条件4：近期阴线数量 > 60%
-            start_idx = i - self.trend_analysis_period
-            recent_bears = dataframe['is_bearish'].iloc[start_idx:i]
-            bear_ratio = recent_bears.sum() / len(recent_bears)
-            
-            if bear_ratio > self.bear_ratio_threshold:
-                result.iloc[i] = True
                 
         return result
 
