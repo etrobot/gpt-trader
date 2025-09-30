@@ -1,5 +1,5 @@
 {
-  "max_open_trades": 3,
+  "max_open_trades": 5,
   "stake_currency": "USDT",
   "stake_amount": 100,
   "tradable_balance_ratio": 0.99,
@@ -36,11 +36,17 @@
   ],
   "pair_blacklist": [],
   "minimal_roi": {
-    "50": 0.1,
-    "180": -1
+    "0": 0.03,
+    "15": 0.02,
+    "30": 0.01,
+    "60": 0
   },
-  "stoploss": -0.15,
+  "stoploss": -0.05,
   "trailing_stop": false,
+  "strategy_params": {
+    "trend_analysis_period": 24,
+    "exit_candle_count": 9
+  },
   "unfilledtimeout": {
     "entry": 10,
     "exit": 30
