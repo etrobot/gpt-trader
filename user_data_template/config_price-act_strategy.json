@@ -1,5 +1,5 @@
 {
-  "max_open_trades": 5,
+  "max_open_trades": 3,
   "stake_currency": "USDT",
   "stake_amount": 100,
   "tradable_balance_ratio": 0.99,
@@ -8,9 +8,9 @@
   "dry_run": true,
   "strategy": "PriceActionStrategy",
   "exchange": {
-    "name": "okx",
-    "key": "${OKX_API_KEY}",
-    "secret": "${OKX_SECRET}",
+    "name": "binance",
+    "key": "${BINANCE_API_KEY}",
+    "secret": "${BINANCE_SECRET}",
     "ccxt_config": {
       "enableRateLimit": true,
       "rateLimit": 100
@@ -36,12 +36,12 @@
   ],
   "pair_blacklist": [],
   "minimal_roi": {
-    "0": 0.03,
-    "15": 0.02,
-    "30": 0.01,
-    "60": 0
+    "0": 0.102,
+    "22": 0.025,
+    "60": 0.023,
+    "155": 0
   },
-  "stoploss": -0.05,
+  "stoploss": -0.35,
   "trailing_stop": false,
   "strategy_params": {
     "trend_analysis_period": 24,
