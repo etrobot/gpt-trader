@@ -8,9 +8,9 @@
   "dry_run": true,
   "strategy": "PriceActionStrategy",
   "exchange": {
-    "name": "okx",
-    "key": "${OKX_API_KEY}",
-    "secret": "${OKX_SECRET}",
+    "name": "binance",
+    "key": "${BINANCE_API_KEY}",
+    "secret": "${BINANCE_SECRET}",
     "ccxt_config": {
       "enableRateLimit": true,
       "rateLimit": 100

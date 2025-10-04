@@ -23,18 +23,13 @@ class PriceActionStrategy(IStrategy):
     position_adjustment_enable = False
     use_custom_stoploss = False
     trailing_stop = False
-    # 固定参数（可被配置覆盖）
-    trend_analysis_period: int = 25
 
 
     # ======================= 可优化参数 - 用于hyperopt =======================
-    # 2) 后半段最长K线因子 - 调整条件2的严格程度（百分比，1.0表示不变化）
-    second_half_max_candle_percentage = DecimalParameter(0.3, 1.5, default=0.63, decimals=2, space="buy")
-    # 3) 前后分界点比例（0.5为平分），用于划分前/后半段
-    # split_ratio = DecimalParameter(0.3, 0.7, default=0.50, decimals=2, space="buy")
-    # 4) 条件2阈值放宽倍率，>1.0 表示放宽
-    mean_multiplier = DecimalParameter(0.8, 2.0, default=1.64, decimals=2, space="buy")
-
+    # 添加买入空间的可优化参数
+    trend_period = DecimalParameter(10, 50, default=30, space="buy", optimize=True)
+    # 前期下跌比例：确保前面有明显下跌
+    decline_ratio = DecimalParameter(0.01, 0.06, default=0.02, space="buy", optimize=True)
     # ROI/止损默认值（可被 hyperopt 在 --spaces roi stoploss 下优化）
     minimal_roi = {
         "0": 0.102,
@@ -51,8 +46,8 @@ class PriceActionStrategy(IStrategy):
         try:
             sp = (config or {}).get("strategy_params", {})
             if isinstance(sp, dict):
-                if "trend_analysis_period" in sp:
-                    self.trend_analysis_period = int(sp["trend_analysis_period"])  # type: ignore[assignment]
+                if "trend_period" in sp:
+                    self.trend_period = int(sp["trend_period"])  # type: ignore[assignment]
         except Exception:
             # 保底：如果配置解析失败，继续使用默认值
             pass
@@ -65,10 +60,8 @@ class PriceActionStrategy(IStrategy):
         包含基础K线属性计算
         """
         # 基础K线属性
-        dataframe['is_bullish'] = dataframe['close'] > dataframe['open']  # 阳线标记
         dataframe['body_length'] = abs(dataframe['close'] - dataframe['open'])  # 实体长度
-        # 新增：与前一根收盘比涨幅>0（用于条件3）
-        dataframe['is_up'] = dataframe['close'] > dataframe['close'].shift(1)
+
 
     # ======================= 策略构建流程主入口 =======================
 
@@ -89,52 +82,41 @@ class PriceActionStrategy(IStrategy):
     # ======================= 策略方法 =======================
 
     def _strategy(self, dataframe: pd.DataFrame) -> pd.Series:
-        """
-        策略逻辑：
-        1. 最低价在前半段
-        2. 后半段最长K线 * 因子(百分比) < 前半段K线平均长度
-        3. 最后一根是阳线
-        """
+
         result = pd.Series(False, index=dataframe.index)
 
-        if len(dataframe) < self.trend_analysis_period:
+        trend_period_value = int(self.trend_period.value)
+        decline_ratio_value = float(self.decline_ratio.value)
+        
+        if len(dataframe) < trend_period_value:
             return result
 
-        for i in range(self.trend_analysis_period, len(dataframe)):
+        for i in range(trend_period_value, len(dataframe)):
             # 获取分析周期内的数据
-            start_idx = i - self.trend_analysis_period
+            start_idx = i - trend_period_value
             period_data = dataframe.iloc[start_idx:i]
+            
+            # 当前K线数据
+            current_candle = dataframe.iloc[i]
 
-            # 分成前后两段
-            # 使用可调分界比例将周期切分为前段/后段
-            # split_ratio = float(self.split_ratio.value)
-            split_ratio = 0.32
-            mid_point = int(len(period_data) * split_ratio)
-            # 约束分界点，避免任一段为空
-            mid_point = max(1, min(len(period_data) - 1, mid_point))
-            first_half = period_data.iloc[:mid_point]
-            second_half = period_data.iloc[mid_point:]
+            # 原始条件：最小实体K线
+            min_body_condition = bool(period_data['body_length'].iloc[-1] == period_data['body_length'].min())
+            
+            # 新增条件：前期有明显下跌
+            # 计算分析周期内的价格下跌幅度
+            period_high_price = period_data['high'].max()
+            current_low_price = current_candle['low']
+            
+            # 下跌幅度：从最高点到当前低点的跌幅
+            decline_pct = (period_high_price - current_low_price) / period_high_price if period_high_price > 0 else 0
+            
+            # 下跌条件：确保有足够的下跌幅度
+            decline_condition = bool(decline_pct >= decline_ratio_value)
 
-            # 条件1：最低价在前半段
-            period_low = period_data['low'].min()
-            half_min_low = first_half['low'].min()
-            condition1 = period_low == half_min_low
+            # 组合条件：原始条件 + 下跌条件
+            condition = min_body_condition and decline_condition
 
-            # 条件2：后半段最长K线 * 因子(百分比) < K线长度平均值
-            second_half_max_candle = second_half['body_length'].max()
-            period_mean_candle = period_data['body_length'].mean()
-            factor2 = float(self.second_half_max_candle_percentage.value)
-            threshold = period_mean_candle * float(self.mean_multiplier.value)
-            condition2 = (second_half_max_candle * factor2) < threshold
-
-            # 条件3：最后一根涨幅 > 0（相对上一根收盘）
-            condition3 = bool(dataframe['is_bullish'].iloc[i - 1])
-
-            # 条件4:
-            condition4 = period_data['body_length'].max() == first_half['body_length'].max()
-
-            # 所有条件都满足
-            if condition1 and condition2 and condition3 and condition4:
+            if condition:
                 result.iloc[i] = True
 
         return result
@@ -163,8 +145,4 @@ class PriceActionStrategy(IStrategy):
         return dataframe
 
     def populate_exit_trend(self, dataframe: pd.DataFrame, metadata: dict) -> pd.DataFrame:
-        """
-        退出信号：主要由 custom_exit 控制，这里保留以便可扩展。
-        当前不基于 DataFrame 的静态条件生成退出信号。
-        """
         return dataframe
