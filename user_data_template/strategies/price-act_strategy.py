@@ -14,7 +14,7 @@ class PriceActionStrategy(IStrategy):
     # FreqTrade固定参数
     INTERFACE_VERSION = 3
     timeframe = "5m"  # freqtrade固定使用5分钟
-    startup_candle_count: int = 120
+    startup_candle_count: int = 200
     process_only_new_candles = True
     # 启用退出信号，以支持更快出场
     use_exit_signal = True
@@ -28,8 +28,10 @@ class PriceActionStrategy(IStrategy):
     # ======================= 可优化参数 - 用于hyperopt =======================
     # 添加买入空间的可优化参数
     trend_period = DecimalParameter(10, 50, default=30, space="buy", optimize=True)
-    # 前期下跌比例：确保前面有明显下跌
-    decline_ratio = DecimalParameter(0.01, 0.06, default=0.02, space="buy", optimize=True)
+    # MA周期参数
+    ma_period = DecimalParameter(10, 30, default=20, space="buy", optimize=True)
+    # 最小实体位置阈值：控制最小实体K线必须在周期的哪个位置之后
+    min_body_position_threshold = DecimalParameter(0.3, 0.7, default=0.5, space="buy", optimize=True)
     # ROI/止损默认值（可被 hyperopt 在 --spaces roi stoploss 下优化）
     minimal_roi = {
         "0": 0.102,
@@ -60,7 +62,11 @@ class PriceActionStrategy(IStrategy):
         包含基础K线属性计算
         """
         # 基础K线属性
-        dataframe['body_length'] = abs(dataframe['close'] - dataframe['open'])  # 实体长度
+        dataframe['body_length'] = abs(dataframe['close'] - dataframe['open']) / dataframe['close']  # 实体长度百分比
+        
+        # 移动平均线 - 使用可优化参数
+        ma_period_value = int(self.ma_period.value)
+        dataframe[f'ma{ma_period_value}'] = dataframe['close'].rolling(window=ma_period_value).mean()
 
 
     # ======================= 策略构建流程主入口 =======================
@@ -86,7 +92,8 @@ class PriceActionStrategy(IStrategy):
         result = pd.Series(False, index=dataframe.index)
 
         trend_period_value = int(self.trend_period.value)
-        decline_ratio_value = float(self.decline_ratio.value)
+        ma_period_value = int(self.ma_period.value)
+        min_body_threshold = float(self.min_body_position_threshold.value)
         
         if len(dataframe) < trend_period_value:
             return result
@@ -99,22 +106,35 @@ class PriceActionStrategy(IStrategy):
             # 当前K线数据
             current_candle = dataframe.iloc[i]
 
-            # 原始条件：最小实体K线
-            min_body_condition = bool(period_data['body_length'].iloc[-1] == period_data['body_length'].min())
+            # 条件1：最小实体k线在后半段
+            # 找到分析周期内最小实体K线的位置
+            min_body_idx = period_data['body_length'].idxmin()
+            period_start_idx = period_data.index[0]
             
-            # 新增条件：前期有明显下跌
-            # 计算分析周期内的价格下跌幅度
-            period_high_price = period_data['high'].max()
-            current_low_price = current_candle['low']
+            # 计算最小实体K线在周期内的相对位置（0到1之间）
+            min_body_position_ratio = (min_body_idx - period_start_idx) / (len(period_data) - 1) if len(period_data) > 1 else 0
             
-            # 下跌幅度：从最高点到当前低点的跌幅
-            decline_pct = (period_high_price - current_low_price) / period_high_price if period_high_price > 0 else 0
+            # 最小实体k线在后半段条件 - 使用可优化参数
+            min_body_condition = bool(min_body_position_ratio >= min_body_threshold)
             
-            # 下跌条件：确保有足够的下跌幅度
-            decline_condition = bool(decline_pct >= decline_ratio_value)
+            # 条件2：最新一条k线升穿MA
+            # 检查当前K线收盘价是否突破MA
+            current_close = current_candle['close']
+            ma_column = f'ma{ma_period_value}'
+            current_ma = current_candle[ma_column]
+            prev_close = dataframe.iloc[i-1]['close'] if i > 0 else 0
+            prev_ma = dataframe.iloc[i-1][ma_column] if i > 0 else 0
+            
+            # 升穿条件：当前收盘价高于MA，且前一根K线收盘价低于或等于MA
+            ma_breakout_condition = bool(
+                current_close > current_ma and 
+                prev_close <= prev_ma and
+                not pd.isna(current_ma) and 
+                not pd.isna(prev_ma)
+            )
 
-            # 组合条件：原始条件 + 下跌条件
-            condition = min_body_condition and decline_condition
+            # 组合条件：最小实体k线在后半段 + 升穿ma20
+            condition = min_body_condition and ma_breakout_condition
 
             if condition:
                 result.iloc[i] = True
